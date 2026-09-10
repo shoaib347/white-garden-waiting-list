@@ -451,9 +451,7 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-serif text-lg font-extrabold tracking-wider text-black uppercase">
-                  Coal
-                </span>
+                <img src="/coal-text-logo.jpg" alt="COAL" className="h-6 object-contain rounded-sm" />
                 <span className="rounded-sm bg-[#c02126] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-widest">
                   Live
                 </span>
