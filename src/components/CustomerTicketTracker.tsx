@@ -110,6 +110,16 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
     };
   }, [socket, reservationId, soundEnabled]);
 
+  // Auto-redirect back to booking form when party is seated or served or cancelled
+  useEffect(() => {
+    if (reservation && ['seated', 'served', 'cancelled', 'no_show'].includes(reservation.status)) {
+      const timer = setTimeout(() => {
+        onBackToBooking();
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [reservation?.status, onBackToBooking]);
+
   const handleShare = () => {
     const url = `${window.location.origin}/#ticket=${reservationId}`;
     navigator.clipboard?.writeText(url);
