@@ -191,14 +191,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
             <span>Chime Alerts: {soundEnabled ? 'Active' : 'Muted'}</span>
           </button>
 
-          <button
-            id="btn-test-sound"
-            onClick={onTestChime}
-            title="Click to test synthesize Web Audio sine-wave chime"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-2.5 py-1.5 text-xs font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition"
-          >
-            <span>🔊 Test Chime</span>
-          </button>
+
 
           {/* Unread Notifications Button */}
           <button
@@ -217,15 +210,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* One-click test simulation button */}
-          <button
-            id="btn-simulate-walkin"
-            onClick={onSimulateWalkIn}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#D32F2F]/60 bg-gradient-to-r from-[#901717] to-[#D32F2F] px-3.5 py-1.5 text-xs font-semibold text-white shadow-[0_0_15px_rgba(211,47,47,0.3)] transition hover:brightness-110 active:scale-98"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-[#D4AF37]" />
-            <span>⚡ Simulate "Shoaib - 6 People (Outdoor)"</span>
-          </button>
+
 
           <button
             id="btn-refresh-queue"
