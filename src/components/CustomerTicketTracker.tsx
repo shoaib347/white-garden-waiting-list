@@ -286,17 +286,6 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
             </div>
           </div>
 
-          {/* Live Status indicator */}
-          <div className="rounded-xl border border-neutral-800/80 bg-[#121212] p-3.5 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
-              </span>
-              <span className="text-neutral-300">Live WebSocket Connection Active</span>
-            </div>
-            <span className="text-[11px] text-neutral-500 font-mono">Auto-Syncing</span>
-          </div>
 
           {/* Instructions */}
           <div className="text-[11px] text-neutral-400 text-center leading-relaxed">

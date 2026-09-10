@@ -408,16 +408,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                       {/* Actions */}
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-1.5">
-                          {/* Live tracker preview link */}
-                          {onSelectReservationForTracker && (
-                            <button
-                              onClick={() => onSelectReservationForTracker(item.reservation_id)}
-                              title="Open customer live ticket tracking page"
-                              className="rounded-lg border border-neutral-700 bg-neutral-800/80 p-1.5 text-neutral-400 hover:border-neutral-500 hover:text-white transition"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </button>
-                          )}
 
                           {/* "Call Customer" (waiting -> ready) */}
                           {item.status === 'waiting' && (
