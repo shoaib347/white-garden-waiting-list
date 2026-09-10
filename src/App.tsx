@@ -21,6 +21,7 @@ import { CustomerBookingForm } from './components/CustomerBookingForm';
 import { CustomerTicketTracker } from './components/CustomerTicketTracker';
 import { RealtimeNotificationBanner } from './components/RealtimeNotificationBanner';
 import { NotificationDrawer } from './components/NotificationDrawer';
+import { LoginScreen } from './components/LoginScreen';
 import { Reservation, QueueStats, NewEntryPayload, StatusChangedPayload, NotificationItem, NotificationHistoryItem } from './types';
 import { playNotificationChime, getAudioContext } from './audioUtils';
 
@@ -55,6 +56,8 @@ export default function App() {
     outdoor_count: 0,
     indoor_count: 0,
   });
+
+  const [staffToken, setStaffToken] = useState<string | null>(localStorage.getItem('staffToken'));
 
   // Track active customer reservation for ticket view
   const [activeReservationId, setActiveReservationId] = useState<string>('COAL-101');
@@ -611,25 +614,32 @@ export default function App() {
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
         {/* VIEW 1: STAFF DASHBOARD */}
         {currentView === 'staff' && (
-          <StaffDashboard
-            queue={queue}
-            stats={stats}
-            branchId={branchId}
-            onStatusChange={handleStatusChange}
-            onSimulateWalkIn={handleSimulateWalkIn}
-            onRefreshQueue={fetchQueue}
-            soundEnabled={soundEnabled}
-            onToggleSound={handleToggleSound}
-            onTestChime={handleTestChime}
-            unreadCount={unreadCount}
-            onOpenNotifications={() => setIsDrawerOpen(true)}
-            onSelectReservationForTracker={handleSelectReservationForTracker}
-            history={notificationHistory}
-            onDismissNotification={handleDismissNotification}
-            onMarkReadNotification={handleMarkReadNotification}
-            onMarkAllRead={handleMarkAllHistoryRead}
-            onRefreshHistory={fetchNotificationHistory}
-          />
+          !staffToken ? (
+            <LoginScreen onLogin={(token) => {
+              localStorage.setItem('staffToken', token);
+              setStaffToken(token);
+            }} />
+          ) : (
+            <StaffDashboard
+              queue={queue}
+              stats={stats}
+              branchId={branchId}
+              onStatusChange={handleStatusChange}
+              onSimulateWalkIn={handleSimulateWalkIn}
+              onRefreshQueue={fetchQueue}
+              soundEnabled={soundEnabled}
+              onToggleSound={handleToggleSound}
+              onTestChime={handleTestChime}
+              unreadCount={unreadCount}
+              onOpenNotifications={() => setIsDrawerOpen(true)}
+              onSelectReservationForTracker={handleSelectReservationForTracker}
+              history={notificationHistory}
+              onDismissNotification={handleDismissNotification}
+              onMarkReadNotification={handleMarkReadNotification}
+              onMarkAllRead={handleMarkAllHistoryRead}
+              onRefreshHistory={fetchNotificationHistory}
+            />
+          )
         )}
 
         {/* VIEW 2: CUSTOMER BOOKING FORM */}
@@ -733,25 +743,32 @@ export default function App() {
                   </span>
                 </div>
 
-                <StaffDashboard
-                  queue={queue}
-                  stats={stats}
-                  branchId={branchId}
-                  onStatusChange={handleStatusChange}
-                  onSimulateWalkIn={handleSimulateWalkIn}
-                  onRefreshQueue={fetchQueue}
-                  soundEnabled={soundEnabled}
-                  onToggleSound={handleToggleSound}
-                  onTestChime={handleTestChime}
-                  unreadCount={unreadCount}
-                  onOpenNotifications={() => setIsDrawerOpen(true)}
-                  onSelectReservationForTracker={handleSelectReservationForTracker}
-                  history={notificationHistory}
-                  onDismissNotification={handleDismissNotification}
-                  onMarkReadNotification={handleMarkReadNotification}
-                  onMarkAllRead={handleMarkAllHistoryRead}
-                  onRefreshHistory={fetchNotificationHistory}
-                />
+                {!staffToken ? (
+                  <LoginScreen onLogin={(token) => {
+                    localStorage.setItem('staffToken', token);
+                    setStaffToken(token);
+                  }} />
+                ) : (
+                  <StaffDashboard
+                    queue={queue}
+                    stats={stats}
+                    branchId={branchId}
+                    onStatusChange={handleStatusChange}
+                    onSimulateWalkIn={handleSimulateWalkIn}
+                    onRefreshQueue={fetchQueue}
+                    soundEnabled={soundEnabled}
+                    onToggleSound={handleToggleSound}
+                    onTestChime={handleTestChime}
+                    unreadCount={unreadCount}
+                    onOpenNotifications={() => setIsDrawerOpen(true)}
+                    onSelectReservationForTracker={handleSelectReservationForTracker}
+                    history={notificationHistory}
+                    onDismissNotification={handleDismissNotification}
+                    onMarkReadNotification={handleMarkReadNotification}
+                    onMarkAllRead={handleMarkAllHistoryRead}
+                    onRefreshHistory={fetchNotificationHistory}
+                  />
+                )}
               </div>
             </div>
           </div>

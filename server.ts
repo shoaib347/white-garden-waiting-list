@@ -142,6 +142,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'coal-fallback-secret-2024';
+
+// POST /api/v1/auth/login
+app.post('/api/v1/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  const staffPassword = process.env.STAFF_PASSWORD || 'coal123'; // Fallback if not set
+  
+  if (username === 'coal' && password === staffPassword) {
+    const token = jwt.sign({ role: 'staff' }, JWT_SECRET, { expiresIn: '12h' });
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
+});
+
 // GET /api/v1/settings
 app.get('/api/v1/settings', async (req, res) => {
   const branchId = req.query.branch_id as string || 'branch_1';
