@@ -576,7 +576,7 @@ export default function App() {
             </div>
 
             {/* Audio Toggle button */}
-            <button onClick={toggleLanguage} className="rounded-lg border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs font-bold text-neutral-300 hover:bg-neutral-800 hover:text-white transition uppercase">{i18n.language === "en" ? "???????" : "English"}</button><button
+            {/* <button onClick={toggleLanguage} className="rounded-lg border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs font-bold text-neutral-300 hover:bg-neutral-800 hover:text-white transition uppercase">{i18n.language === "en" ? "???????" : "English"}</button> */}<button
               id="header-sound-toggle"
               onClick={handleToggleSound}
               title={soundEnabled ? 'Audio chime alerts enabled' : 'Audio chime alerts muted'}
@@ -788,6 +788,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
