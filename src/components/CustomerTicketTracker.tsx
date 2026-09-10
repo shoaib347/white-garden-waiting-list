@@ -90,12 +90,14 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
         setReservation((prev) => (prev ? { ...prev, status: data.status } : prev));
 
         if (data.status === 'ready') {
-          setLastNotification('🔔 Table Ready! Please proceed to the Coal Host Stand.');
-          if (soundEnabled) {
-            playNotificationChime({ volume: 0.85, type: 'status_call' });
-          }
-        } else if (data.status === 'served') {
-          setLastNotification('Table Seated. Enjoy your dining experience.');
+          setLastNotification('🔔 Table Ready! Please proceed to the host stand.');
+          if (soundEnabled) playNotificationChime({ volume: 0.85, type: 'status_call' });
+        } else if (data.status === 'seated' || data.status === 'served') {
+          setLastNotification('✅ Table Seated. Enjoy your dining experience.');
+          if (soundEnabled) playNotificationChime({ volume: 0.85, type: 'status_call' });
+        } else if (data.status === 'cancelled') {
+          setLastNotification('❌ Reservation Cancelled.');
+          if (soundEnabled) playNotificationChime({ volume: 0.85, type: 'status_call' });
         }
       }
     };
