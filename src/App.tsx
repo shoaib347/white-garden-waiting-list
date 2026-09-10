@@ -525,60 +525,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Navigation View Switcher Tabs */}
-          <nav className="flex items-center rounded-xl border border-neutral-800 bg-[#181818] p-1 text-xs">
-            <button
-              id="tab-staff-dashboard"
-              onClick={() => setCurrentView('staff')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition ${
-                currentView === 'staff'
-                  ? 'bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Users className="h-3.5 w-3.5" />
-              <span>Staff Dashboard</span>
-            </button>
-
-            <button
-              id="tab-customer-booking"
-              onClick={() => setCurrentView('booking')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition ${
-                currentView === 'booking'
-                  ? 'bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Flame className="h-3.5 w-3.5" />
-              <span>Guest Waitlist Form</span>
-            </button>
-
-            <button
-              id="tab-customer-ticket"
-              onClick={() => setCurrentView('ticket')}
-              className={`hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition ${
-                currentView === 'ticket'
-                  ? 'bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              <Ticket className="h-3.5 w-3.5" />
-              <span>Guest Live Tracker</span>
-            </button>
-
-            <button
-              id="tab-split-mode"
-              onClick={() => setCurrentView('split')}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium transition ${
-                currentView === 'split'
-                  ? 'bg-[#D4AF37] text-neutral-950 font-bold shadow-xs'
-                  : 'text-neutral-400 hover:text-[#D4AF37]'
-              }`}
-            >
-              <Columns className="h-3.5 w-3.5" />
-              <span>Split Dual Test</span>
-            </button>
-          </nav>
 
           {/* Right Status Badges & Controls */}
           <div className="flex items-center gap-2">
