@@ -599,6 +599,7 @@ export default function App() {
           <div className="py-4">
             <CustomerBookingForm
               branchId={branchId}
+              stats={stats}
               onSuccess={(resId) => {
                 setActiveReservationId(resId);
                 setCurrentView('ticket');
@@ -668,6 +669,7 @@ export default function App() {
                 ) : (
                   <CustomerBookingForm
                     branchId={branchId}
+                    stats={stats}
                     onSuccess={(resId) => {
                       setActiveReservationId(resId);
                     }}

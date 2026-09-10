@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Flame, Users, Phone, MapPin, MessageSquare, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
-import { DiningArea } from '../types';
+import { Flame, Users, Phone, MapPin, MessageSquare, CheckCircle, ArrowRight, Sparkles, Clock } from 'lucide-react';
+import { DiningArea, QueueStats } from '../types';
 
 interface BookingFormProps {
   onSuccess: (reservationId: string) => void;
   branchId: string;
+  stats: QueueStats;
 }
 
-export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, branchId }) => {
+export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, branchId, stats }) => {
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [partySize, setPartySize] = useState<number>(2);
@@ -156,8 +157,39 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
           <p className="mt-1 text-xs text-neutral-400 sm:text-sm">
             Instant digital waitlist for Coal Restaurant. Real-time updates delivered to your device.
           </p>
+        </div>
 
+        {/* Real-time Stats Cards */}
+        <div className="mb-6 grid grid-cols-2 gap-3">
+          {/* Metric 1: Waiting */}
+          <div className="relative overflow-hidden rounded-xl border border-neutral-800 bg-[#161616] p-4 shadow-sm text-left">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Waiting in Queue</span>
+              <Users className="h-4 w-4 text-[#D4AF37]" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold tracking-tight text-white font-serif">{stats.waiting_count}</span>
+              <span className="text-xs text-neutral-400">parties</span>
+            </div>
+            <div className="mt-1 flex items-center text-[11px] text-neutral-500">
+              <span>{stats.outdoor_count} Outdoor · {stats.indoor_count} Indoor</span>
+            </div>
+          </div>
 
+          {/* Metric 2: Avg Wait Time */}
+          <div className="relative overflow-hidden rounded-xl border border-neutral-800 bg-[#161616] p-4 shadow-sm text-left">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Avg Wait Time</span>
+              <Clock className="h-4 w-4 text-neutral-400" />
+            </div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold tracking-tight text-white font-serif">~{stats.avg_wait_mins}</span>
+              <span className="text-xs text-neutral-400">minutes</span>
+            </div>
+            <div className="mt-1 text-[11px] text-neutral-500">
+              Based on current table turns
+            </div>
+          </div>
         </div>
 
         {errorMsg && (
