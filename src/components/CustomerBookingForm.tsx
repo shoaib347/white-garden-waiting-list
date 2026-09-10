@@ -47,6 +47,10 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
       setErrorMsg('Please enter mobile phone number');
       return;
     }
+    if (mobile.length !== 10) {
+      setErrorMsg('Mobile number must be exactly 10 digits');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -223,7 +227,14 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                 type="tel"
                 required
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  if (val.length <= 10) {
+                    setMobile(val);
+                  }
+                }}
+                pattern="[0-9]{10}"
+                title="Must be exactly 10 digits"
                 className="w-full rounded-xl border border-neutral-700 bg-[#121212] pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-[#D4AF37] focus:outline-hidden font-mono"
               />
             </div>
