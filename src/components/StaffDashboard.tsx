@@ -420,8 +420,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             </button>
                           )}
 
-                          {/* "Seat Customer" (ready or waiting -> seated) */}
-                          {(item.status === 'ready' || item.status === 'waiting') && (
+                          {/* "Seat Customer" (ready -> seated) */}
+                          {item.status === 'ready' && (
                             <button
                               id={`btn-seat-${item.reservation_id}`}
                               disabled={actionLoadingId === item.reservation_id}
