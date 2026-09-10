@@ -459,10 +459,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
 
         {/* Footer info */}
         <div className="border-t border-neutral-800/80 bg-[#121212] px-4 py-3 flex flex-wrap items-center justify-between text-[11px] text-neutral-500">
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-            <span>WebSocket Live Engine: Subscribed to room <strong className="text-neutral-300">branch_{branchId}</strong></span>
-          </div>
+
           <div>
             Showing {filteredQueue.length} of {queue.length} total waitlist entries
           </div>
