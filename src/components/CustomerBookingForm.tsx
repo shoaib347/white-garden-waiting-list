@@ -307,7 +307,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             disabled={isSubmitting}
             className="w-full rounded-xl border border-[#D32F2F] bg-gradient-to-r from-[#B71C1C] via-[#D32F2F] to-[#B71C1C] py-3 text-sm font-bold tracking-wide text-white shadow-[0_0_25px_rgba(211,47,47,0.35)] transition hover:brightness-110 active:scale-98 disabled:opacity-50"
           >
-            {isSubmitting ? 'Registering on Waitlist...' : '🔥 Confirm & Join Waitlist'}
+            {isSubmitting ? 'Registering on Waitlist...' : 'Confirm & Join Waitlist'}
           </button>
 
           <p className="text-center text-[11px] text-neutral-500">
