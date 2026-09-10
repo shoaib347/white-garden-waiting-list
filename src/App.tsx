@@ -294,7 +294,8 @@ export default function App() {
   // Handle staff action (call / seat / cancel)
   const handleStatusChange = useCallback(async (
     reservationId: string,
-    newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled'
+    newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled',
+    reason?: string
   ) => {
     try {
       const res = await fetch('/api/v1/status', {
@@ -303,6 +304,7 @@ export default function App() {
         body: JSON.stringify({
           reservation_id: reservationId,
           status: newStatus,
+          reason,
         }),
       });
 

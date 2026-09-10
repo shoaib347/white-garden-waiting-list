@@ -93,9 +93,19 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   });
 
   const handleAction = async (reservationId: string, status: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled') => {
+    let cancelReason = undefined;
+    if (status === 'cancelled') {
+      const reason = window.prompt("Please enter a mandatory reason for cancelling this reservation (e.g., No show, Guest requested):");
+      if (!reason || !reason.trim()) {
+        alert("Cancellation aborted: Reason is mandatory.");
+        return;
+      }
+      cancelReason = reason.trim();
+    }
+    
     try {
       setActionLoadingId(reservationId);
-      await onStatusChange(reservationId, status);
+      await onStatusChange(reservationId, status, cancelReason);
     } finally {
       setActionLoadingId(null);
     }

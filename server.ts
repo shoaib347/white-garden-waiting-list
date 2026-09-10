@@ -77,7 +77,7 @@ async function syncAllCustomerTrackers(branchId = 'branch_1') {
 }
 
 // Reusable helper to update reservation status and broadcast via Socket.IO
-async function updateReservationStatus(reservationId: string, newStatus: ReservationStatusType) {
+async function updateReservationStatus(reservationId: string, newStatus: ReservationStatusType, reason?: string) {
   const reservation = await prisma.reservation.findUnique({ where: { reservation_id: reservationId } });
   if (!reservation) return null;
 
@@ -88,6 +88,10 @@ async function updateReservationStatus(reservationId: string, newStatus: Reserva
     updateData.notified_at = now;
   } else if (newStatus === 'seated' || newStatus === 'served') {
     updateData.seated_at = now;
+  }
+
+  if (reason && newStatus === 'cancelled') {
+    updateData.notes = reservation.notes ? `${reservation.notes} | Cancel Reason: ${reason}` : `Cancel Reason: ${reason}`;
   }
 
   const updatedReservation = await prisma.reservation.update({
@@ -267,13 +271,13 @@ app.post('/api/v1/create', async (req, res) => {
 
 // 4. POST /api/v1/status: Staff action - Call Customer ('ready') or Seat Customer ('seated' | 'served')
 app.post('/api/v1/status', async (req, res) => {
-  const { reservation_id, status } = req.body;
+  const { reservation_id, status, reason } = req.body;
 
   if (!reservation_id || !status) {
     return res.status(400).json({ error: 'reservation_id and status are required' });
   }
 
-  const result = await updateReservationStatus(reservation_id, status);
+  const result = await updateReservationStatus(reservation_id, status, reason);
   if (!result) {
     return res.status(404).json({ error: 'Reservation not found' });
   }
