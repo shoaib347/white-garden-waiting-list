@@ -344,17 +344,6 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                     {/* Actions */}
                     <td className="px-4 py-3.5 text-right whitespace-nowrap">
                       <div className="inline-flex items-center justify-end gap-1.5">
-                        {/* Tracker Link */}
-                        {onSelectReservationForTracker && (
-                          <button
-                            onClick={() => onSelectReservationForTracker(item.reservation_id)}
-                            title="Open live guest ticket tracker"
-                            className="rounded-lg border border-neutral-700 bg-neutral-800/80 p-1.5 text-neutral-400 hover:text-white hover:border-neutral-500 transition"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-
                         {/* Mark as Seated button if not yet seated */}
                         {!isSeated && item.status !== 'cancelled' && (
                           <button
@@ -380,19 +369,6 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                           >
                             <Check className="h-3 w-3" />
                             <span>Read</span>
-                          </button>
-                        )}
-
-                        {/* Dismiss */}
-                        {!item.dismissed_at && (
-                          <button
-                            id={`history-btn-dismiss-${item.id}`}
-                            disabled={loadingId === item.id}
-                            onClick={() => handleDismiss(item.id, item.reservation_id)}
-                            title="Mark notification as dismissed"
-                            className="rounded-lg border border-neutral-800 bg-neutral-900/80 p-1 text-neutral-500 hover:text-white hover:bg-neutral-800 transition disabled:opacity-50"
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>
