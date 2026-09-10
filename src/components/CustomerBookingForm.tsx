@@ -154,9 +154,6 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
           <h2 className="text-xl font-bold tracking-tight text-white font-serif sm:text-2xl">
             Join the Coal Waitlist
           </h2>
-          <p className="mt-1 text-xs text-neutral-400 sm:text-sm">
-            Instant digital waitlist for Coal Restaurant. Real-time updates delivered to your device.
-          </p>
         </div>
 
         {/* Real-time Stats Cards */}
