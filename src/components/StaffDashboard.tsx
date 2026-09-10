@@ -297,9 +297,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                   <td colSpan={7} className="px-4 py-12 text-center text-neutral-500">
                     <Flame className="mx-auto h-8 w-8 text-neutral-600 mb-2 opacity-60" />
                     <p className="text-sm font-medium text-neutral-400">No parties match the filter criteria</p>
-                    <p className="text-xs text-neutral-600 mt-1">
-                      Use the "Simulate Walk-in" button above or submit from the Booking Form to test real-time prepending.
-                    </p>
+
                   </td>
                 </tr>
               ) : (

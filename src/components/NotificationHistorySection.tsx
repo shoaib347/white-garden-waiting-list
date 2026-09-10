@@ -119,9 +119,6 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                 </span>
               )}
             </div>
-            <p className="text-xs text-neutral-400">
-              Persistent record of all incoming guest entries, reservation timestamps, and last viewed/dismissed events.
-            </p>
           </div>
         </div>
 
@@ -382,10 +379,6 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
       </div>
 
       {/* Footer summary */}
-      <div className="border-t border-neutral-800/80 bg-[#121212] px-4 py-2.5 text-[11px] text-neutral-500 flex items-center justify-between">
-        <span>Displaying {filteredHistory.length} of {history.length} notification audit logs</span>
-        <span>Includes reservation creation timestamps and notification viewed/dismissed timestamps</span>
-      </div>
     </div>
   );
 };

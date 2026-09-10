@@ -106,9 +106,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
           Table Reserved, {customerName}!
         </h2>
 
-        <p className="mt-1 text-sm text-neutral-400">
-          The staff dashboard has received your live reservation.
-        </p>
+
 
         <div className="mt-6 grid grid-cols-2 gap-3 rounded-xl border border-neutral-800 bg-[#121212] p-4 text-left">
           <div>
@@ -319,9 +317,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             {isSubmitting ? 'Registering on Waitlist...' : 'Confirm & Join Waitlist'}
           </button>
 
-          <p className="text-center text-[11px] text-neutral-500">
-            By joining, you will receive real-time queue position updates and audio/visual alerts when your table is prepared.
-          </p>
+
         </form>
       </div>
     </div>
