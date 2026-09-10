@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { Flame, Users, Phone, MapPin, MessageSquare, CheckCircle, ArrowRight, Sparkles, Clock } from 'lucide-react';
 import { DiningArea, QueueStats } from '../types';
 
@@ -11,6 +12,8 @@ interface BookingFormProps {
 }
 
 export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, branchId, stats, isWaitlistOpen = true }) => {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [partySize, setPartySize] = useState<number>(2);
@@ -83,21 +86,21 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-neutral-400">
           <Clock className="h-8 w-8" />
         </div>
-        <h2 className="mt-3 text-2xl font-bold text-white font-serif tracking-tight">Waitlist Currently Closed</h2>
+        <h2 className="mt-3 text-2xl font-bold text-white font-serif tracking-tight">{t('Waitlist Currently Closed')}</h2>
         <p className="mt-2 text-sm text-neutral-400 mb-6">
-          Coal Restaurant is not accepting waitlist entries at this moment. Please check back during our operating hours.
+          Coal Restaurant is not accepting waitlist entries at this moment. Please check back during our {t('Operating Hours')}.
         </p>
 
         <div className="rounded-xl border border-neutral-800 bg-[#121212] p-5 text-left text-sm">
-          <h3 className="font-semibold text-[#D4AF37] mb-3 uppercase tracking-wider text-xs">Operating Hours</h3>
+          <h3 className="font-semibold text-[#D4AF37] mb-3 uppercase tracking-wider text-xs">{t('Operating Hours')}</h3>
           <ul className="space-y-2 text-neutral-300">
-            <li className="flex justify-between"><span>Sunday</span> <span>12 PM–1:30 AM</span></li>
-            <li className="flex justify-between"><span>Monday</span> <span>12 PM–1:30 AM</span></li>
-            <li className="flex justify-between"><span>Tuesday</span> <span>12 PM–1:30 AM</span></li>
-            <li className="flex justify-between"><span>Wednesday</span> <span>12 PM–1:30 AM</span></li>
-            <li className="flex justify-between"><span>Thursday</span> <span>12 PM–1:30 AM</span></li>
-            <li className="flex justify-between"><span>Friday</span> <span>1 PM–1:30 AM</span></li>
-            <li className="flex justify-between"><span>Saturday</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Sunday')}</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Monday')}</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Tuesday')}</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Wednesday')}</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Thursday')}</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Friday')}</span> <span>1 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>{t('Saturday')}</span> <span>12 PM–1:30 AM</span></li>
           </ul>
         </div>
       </div>
@@ -111,7 +114,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             <Flame className="h-6 w-6" />
           </div>
           <h2 className="text-xl font-bold tracking-tight text-white font-serif sm:text-2xl">
-            Join the Coal Waitlist
+            {t('Join the Coal Waitlist')}
           </h2>
         </div>
 
@@ -120,27 +123,27 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
           {/* Metric 1: Waiting */}
           <div className="relative overflow-hidden rounded-xl border border-neutral-800 bg-[#161616] p-4 shadow-sm text-left">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Waiting in Queue</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">{t('WAITING IN QUEUE')}</span>
               <Users className="h-4 w-4 text-[#D4AF37]" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-bold tracking-tight text-white font-serif">{stats.waiting_count}</span>
-              <span className="text-xs text-neutral-400">parties</span>
+              <span className="text-xs text-neutral-400">{t('parties')}</span>
             </div>
             <div className="mt-1 flex items-center text-[11px] text-neutral-500">
-              <span>{stats.outdoor_count} Outdoor · {stats.indoor_count} Indoor</span>
+              <span>{stats.outdoor_count} Outdoor · {stats.indoor_count} {t('Indoor')}</span>
             </div>
           </div>
 
-          {/* Metric 2: Avg Wait Time */}
+          {/* Metric 2: {t('AVG WAIT TIME')} */}
           <div className="relative overflow-hidden rounded-xl border border-neutral-800 bg-[#161616] p-4 shadow-sm text-left">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Avg Wait Time</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">{t('AVG WAIT TIME')}</span>
               <Clock className="h-4 w-4 text-neutral-400" />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-2xl font-bold tracking-tight text-white font-serif">~{stats.avg_wait_mins}</span>
-              <span className="text-xs text-neutral-400">minutes</span>
+              <span className="text-xs text-neutral-400">{t('minutes')}</span>
             </div>
             <div className="mt-1 text-[11px] text-neutral-500">
               Based on current table turns
@@ -155,10 +158,10 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Guest Name */}
+          {/* {t('GUEST NAME *')}/}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">
-              Guest Name *
+              {t('GUEST NAME *')}
             </label>
             <input
               id="input-customer-name"
@@ -173,7 +176,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
           {/* Mobile Phone */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">
-              Mobile Number (for SMS & table notification) *
+              {t('MOBILE NUMBER (FOR SMS & TABLE NOTIFICATION) *')}
             </label>
             <div className="relative">
               <Phone className="absolute top-3 left-3 h-4 w-4 text-neutral-500" />
@@ -195,11 +198,11 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             </div>
           </div>
 
-          {/* Party Size */}
+          {/* {t('PARTY SIZE')} */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold uppercase tracking-wider text-neutral-300">
-                Party Size
+                {t('PARTY SIZE')}
               </label>
               <span className="text-xs font-bold text-[#D4AF37]">
                 {partySize} {partySize === 1 ? 'Person' : 'People'}
@@ -240,8 +243,8 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                       : 'border-neutral-800 bg-[#121212] text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                   }`}
                 >
-                  <div className="text-xs font-bold text-white">{area.name}</div>
-                  <div className="text-[11px] text-neutral-400 mt-0.5">{area.desc}</div>
+                  <div className="text-xs font-bold text-white">{t(area.name)}</div>
+                  <div className="text-[11px] text-neutral-400 mt-0.5">{t(area.desc)}</div>
                 </button>
               ))}
             </div>
@@ -271,7 +274,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             disabled={isSubmitting}
             className="w-full rounded-xl border border-[#D32F2F] bg-gradient-to-r from-[#B71C1C] via-[#D32F2F] to-[#B71C1C] py-3 text-sm font-bold tracking-wide text-white shadow-[0_0_25px_rgba(211,47,47,0.35)] transition hover:brightness-110 active:scale-98 disabled:opacity-50"
           >
-            {isSubmitting ? 'Registering on Waitlist...' : 'Confirm & Join Waitlist'}
+            {isSubmitting ? t('Submitting...') : t('JOIN WAITLIST')}
           </button>
 
 
@@ -280,3 +283,5 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
     </div>
   );
 };
+
+

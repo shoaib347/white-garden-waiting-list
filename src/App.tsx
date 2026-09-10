@@ -24,12 +24,16 @@ import { NotificationDrawer } from './components/NotificationDrawer';
 import { LoginScreen } from './components/LoginScreen';
 import { Reservation, QueueStats, NewEntryPayload, StatusChangedPayload, NotificationItem, NotificationHistoryItem } from './types';
 import { playNotificationChime, getAudioContext } from './audioUtils';
+import { useTranslation } from 'react-i18next';
+import './i18n';
 
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 
 type ActiveView = 'staff' | 'booking' | 'ticket' | 'split';
 
 export default function App() {
+  const { t, i18n } = useTranslation();
+  const toggleLanguage = () => { i18n.changeLanguage(i18n.language === 'en' ? 'ar' : 'en'); };
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -791,3 +795,4 @@ export default function App() {
     </div>
   );
 }
+
