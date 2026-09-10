@@ -276,7 +276,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
               <option value="Main Dining">Main Dining</option>
               <option value="Outdoor Terrace">Outdoor Terrace</option>
               <option value="Coal Hearth Bar">Coal Hearth Bar</option>
-              <option value="Private Vault">Private Vault</option>
             </select>
 
             {/* Search Input */}

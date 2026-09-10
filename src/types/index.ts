@@ -1,6 +1,6 @@
 export type ReservationStatus = 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled' | 'no_show';
 
-export type DiningArea = 'Main Dining Room' | 'Outdoor Terrace' | 'Coal Hearth Bar' | 'Private Vault';
+export type DiningArea = 'Main Dining Room' | 'Outdoor Terrace' | 'Coal Hearth Bar';
 
 export interface Reservation {
   reservation_id: string; // e.g., "COAL-101"

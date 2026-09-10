@@ -27,7 +27,6 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
     { id: 'Main Dining Room', name: 'Main Dining Room', desc: 'Warm dim lighting, view of live grill' },
     { id: 'Outdoor Terrace', name: 'Outdoor Terrace', desc: 'Alfresco dining with heated lamps' },
     { id: 'Coal Hearth Bar', name: 'Coal Hearth Bar', desc: 'Craft cocktails & charcuterie seating' },
-    { id: 'Private Vault', name: 'Private Vault', desc: 'Intimate wine cellar enclave' },
   ];
 
   const handleQuickPreset = (name: string, size: number, area: DiningArea) => {
@@ -158,26 +157,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             Instant digital waitlist for Coal Restaurant. Real-time updates delivered to your device.
           </p>
 
-          {/* Quick preset pills for easy demo testing */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[11px] text-neutral-500 flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-[#D4AF37]" /> Quick demo fills:
-            </span>
-            <button
-              type="button"
-              onClick={() => handleQuickPreset('Shoaib', 6, 'Outdoor Terrace')}
-              className="rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-2.5 py-1 text-[11px] font-medium text-[#D4AF37] hover:bg-[#D4AF37]/20 transition"
-            >
-              Shoaib · 6 Guests (Outdoor)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickPreset('Camilla Rossi', 2, 'Coal Hearth Bar')}
-              className="rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-[11px] font-medium text-neutral-300 hover:bg-neutral-700 transition"
-            >
-              Camilla · 2 Guests (Bar)
-            </button>
-          </div>
+
         </div>
 
         {errorMsg && (
