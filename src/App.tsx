@@ -569,17 +569,7 @@ export default function App() {
               title={isConnected ? 'Connected to WebSocket Server' : 'Connecting to WebSocket...'}
               className="hidden md:flex items-center gap-1.5 rounded-full border border-neutral-800 bg-[#161616] px-2.5 py-1 text-[11px] text-neutral-400 font-mono"
             >
-              {isConnected ? (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
-                  <span className="text-emerald-400">Live WS</span>
-                </>
-              ) : (
-                <>
-                  <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-                  <span className="text-amber-400">Reconnecting</span>
-                </>
-              )}
+              
             </div>
 
             {/* Audio Toggle button */}
@@ -795,4 +785,5 @@ export default function App() {
     </div>
   );
 }
+
 
