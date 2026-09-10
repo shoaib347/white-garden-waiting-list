@@ -7,9 +7,10 @@ interface BookingFormProps {
   onSuccess: (reservationId: string) => void;
   branchId: string;
   stats: QueueStats;
+  isWaitlistOpen?: boolean;
 }
 
-export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, branchId, stats }) => {
+export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, branchId, stats, isWaitlistOpen = true }) => {
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [partySize, setPartySize] = useState<number>(2);
@@ -48,7 +49,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
 
     try {
       setIsSubmitting(true);
-      setErrorMsg(null);
+      setErrorMsg('');
 
       const response = await fetch('/api/v1/create', {
         method: 'POST',
@@ -76,9 +77,32 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
     }
   };
 
+  if (!isWaitlistOpen) {
+    return (
+      <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-8 text-center shadow-2xl">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-neutral-400">
+          <Clock className="h-8 w-8" />
+        </div>
+        <h2 className="mt-3 text-2xl font-bold text-white font-serif tracking-tight">Waitlist Currently Closed</h2>
+        <p className="mt-2 text-sm text-neutral-400 mb-6">
+          Coal Restaurant is not accepting waitlist entries at this moment. Please check back during our operating hours.
+        </p>
 
-
-  return (
+        <div className="rounded-xl border border-neutral-800 bg-[#121212] p-5 text-left text-sm">
+          <h3 className="font-semibold text-[#D4AF37] mb-3 uppercase tracking-wider text-xs">Operating Hours</h3>
+          <ul className="space-y-2 text-neutral-300">
+            <li className="flex justify-between"><span>Sunday</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>Monday</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>Tuesday</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>Wednesday</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>Thursday</span> <span>12 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>Friday</span> <span>1 PM–1:30 AM</span></li>
+            <li className="flex justify-between"><span>Saturday</span> <span>12 PM–1:30 AM</span></li>
+          </ul>
+        </div>
+      </div>
+    );
+  }  return (
     <div className="mx-auto max-w-xl">
       <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-6 sm:p-8 shadow-2xl">
         {/* Header */}

@@ -44,3 +44,9 @@ model NotificationHistory {
 
   reservation Reservation @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade)
 }
+
+model BranchSettings {
+  id                  String   @id @default("branch_1")
+  is_waitlist_open    Boolean  @default(true)
+  updated_at          DateTime @updatedAt
+}

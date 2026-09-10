@@ -138,6 +138,31 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// GET /api/v1/settings
+app.get('/api/v1/settings', async (req, res) => {
+  const branchId = req.query.branch_id as string || 'branch_1';
+  let settings = await prisma.branchSettings.findUnique({ where: { id: branchId } });
+  if (!settings) {
+    settings = await prisma.branchSettings.create({ data: { id: branchId, is_waitlist_open: true } });
+  }
+  res.json(settings);
+});
+
+// POST /api/v1/settings
+app.post('/api/v1/settings', async (req, res) => {
+  const { branch_id = 'branch_1', is_waitlist_open } = req.body;
+  if (typeof is_waitlist_open !== 'boolean') {
+    return res.status(400).json({ error: 'is_waitlist_open boolean is required' });
+  }
+  const settings = await prisma.branchSettings.upsert({
+    where: { id: branch_id },
+    create: { id: branch_id, is_waitlist_open },
+    update: { is_waitlist_open }
+  });
+  io.to(`branch_${branch_id}`).emit('settings:updated', settings);
+  res.json(settings);
+});
+
 // 1. GET /api/v1/queue: Fetch active queue and statistics for staff dashboard
 app.get('/api/v1/queue', async (req, res) => {
   const branchId = (req.query.branch_id as string) || 'branch_1';

@@ -84,9 +84,22 @@ export default function App() {
   }));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(true);
 
   // WebSocket Connection
   const { socket, isConnected } = useSocket();
+
+  // Load initial settings
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/settings?branch_id=${branchId}`);
+      if (!res.ok) throw new Error('Failed to fetch settings');
+      const data = await res.json();
+      setIsWaitlistOpen(data.is_waitlist_open);
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+    }
+  }, [branchId]);
 
   // Load initial queue data
   const fetchQueue = useCallback(async () => {
@@ -121,9 +134,10 @@ export default function App() {
   }, [branchId]);
 
   useEffect(() => {
+    fetchSettings();
     fetchQueue();
     fetchNotificationHistory();
-  }, [fetchQueue, fetchNotificationHistory]);
+  }, [fetchSettings, fetchQueue, fetchNotificationHistory]);
 
   // Handle URL hash routing (e.g. #ticket=COAL-101)
   useEffect(() => {
@@ -254,12 +268,17 @@ export default function App() {
       fetchNotificationHistory();
     };
 
+    const handleSettingsUpdated = (data: { is_waitlist_open: boolean }) => {
+      setIsWaitlistOpen(data.is_waitlist_open);
+    };
+
     socket.on('queue:new_entry', handleNewEntry);
     socket.on('queue:status_changed', handleStatusChanged);
     socket.on('notification:new', handleNotificationNew);
     socket.on('notification:updated', handleNotificationUpdated);
     socket.on('notification:history_synced', handleNotificationHistorySynced);
     socket.on('queue:reset', handleQueueReset);
+    socket.on('settings:updated', handleSettingsUpdated);
 
     return () => {
       socket.off('queue:new_entry', handleNewEntry);
@@ -268,6 +287,7 @@ export default function App() {
       socket.off('notification:updated', handleNotificationUpdated);
       socket.off('notification:history_synced', handleNotificationHistorySynced);
       socket.off('queue:reset', handleQueueReset);
+      socket.off('settings:updated', handleSettingsUpdated);
     };
   }, [socket, branchId, soundEnabled, fetchQueue, fetchNotificationHistory]);
 
@@ -551,6 +571,35 @@ export default function App() {
 
           {/* Right Status Badges & Controls */}
           <div className="flex items-center gap-2">
+            {/* Waitlist Open/Close Toggle (Staff Only) */}
+            {(currentView === 'staff' || currentView === 'split') && (
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/v1/settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ branch_id: branchId, is_waitlist_open: !isWaitlistOpen })
+                    });
+                    if (res.ok) {
+                      setIsWaitlistOpen(!isWaitlistOpen);
+                    }
+                  } catch (err) {
+                    console.error('Failed to toggle waitlist status', err);
+                  }
+                }}
+                title={isWaitlistOpen ? 'Waitlist is Open - Click to Close' : 'Waitlist is Closed - Click to Open'}
+                className={`hidden md:flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-mono font-bold transition cursor-pointer ${
+                  isWaitlistOpen 
+                    ? 'border-emerald-800 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/60' 
+                    : 'border-red-800 bg-red-950/40 text-red-400 hover:bg-red-900/60'
+                }`}
+              >
+                <span className={`h-2 w-2 rounded-full ${isWaitlistOpen ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                <span>{isWaitlistOpen ? 'WAITLIST OPEN' : 'WAITLIST CLOSED'}</span>
+              </button>
+            )}
+
             {/* WebSocket Connection Pill */}
             <div
               title={isConnected ? 'Connected to WebSocket Server' : 'Connecting to WebSocket...'}
@@ -632,6 +681,7 @@ export default function App() {
             <CustomerBookingForm
               branchId={branchId}
               stats={stats}
+              isWaitlistOpen={isWaitlistOpen}
               onSuccess={(resId) => {
                 setActiveReservationId(resId);
                 setCurrentView('ticket');
