@@ -16,13 +16,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
   const [areaName, setAreaName] = useState<DiningArea>('Main Dining Room');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [createdTicket, setCreatedTicket] = useState<{
-    id: string;
-    queueNumber: number;
-    estimatedWait: number;
-    peopleAhead: number;
-  } | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const areas: { id: DiningArea; name: string; desc: string }[] = [
     { id: 'Main Dining Room', name: 'Main Dining Room', desc: 'Warm dim lighting, view of live grill' },
@@ -74,12 +68,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
         throw new Error(data.error || 'Failed to submit reservation');
       }
 
-      setCreatedTicket({
-        id: data.reservation.reservation_id,
-        queueNumber: data.reservation.queue_number,
-        estimatedWait: data.reservation.estimated_wait_mins,
-        peopleAhead: data.people_ahead,
-      });
+      onSuccess(data.reservation.reservation_id);
     } catch (err: any) {
       setErrorMsg(err.message || 'Network error submitting waitlist entry');
     } finally {
@@ -87,63 +76,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
     }
   };
 
-  if (createdTicket) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="mx-auto max-w-lg overflow-hidden rounded-2xl border border-[#D4AF37]/40 bg-[#161616] p-8 text-center shadow-2xl"
-      >
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-gradient-to-br from-[#261E0F] to-[#121212] text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]">
-          <CheckCircle className="h-8 w-8" />
-        </div>
 
-        <span className="rounded-full bg-[#D4AF37]/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#D4AF37]">
-          Confirmed on Waitlist
-        </span>
-
-        <h2 className="mt-3 text-2xl font-bold text-white font-serif tracking-tight">
-          Table Reserved, {customerName}!
-        </h2>
-
-
-
-        <div className="mt-6 grid grid-cols-2 gap-3 rounded-xl border border-neutral-800 bg-[#121212] p-4 text-left">
-          <div>
-            <div className="text-[11px] uppercase tracking-wider text-neutral-500">Ticket Number</div>
-            <div className="text-xl font-bold text-[#D4AF37] font-mono">#{createdTicket.queueNumber}</div>
-            <div className="text-[10px] text-neutral-500">{createdTicket.id}</div>
-          </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-wider text-neutral-500">People Ahead</div>
-            <div className="text-xl font-bold text-white">{createdTicket.peopleAhead} Parties</div>
-            <div className="text-[10px] text-neutral-500">~{createdTicket.estimatedWait} mins wait</div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            onClick={() => onSuccess(createdTicket.id)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 active:scale-98"
-          >
-            <span>Open Live Ticket Tracker</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
-
-          <button
-            onClick={() => {
-              setCreatedTicket(null);
-              setCustomerName('');
-              setNotes('');
-            }}
-            className="text-xs text-neutral-400 hover:text-neutral-200 transition"
-          >
-            Register another party
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-xl">
