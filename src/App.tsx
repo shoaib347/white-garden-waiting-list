@@ -477,7 +477,10 @@ export default function App() {
     playNotificationChime({ volume: 0.8, type: 'new_entry' });
   };
 
-  const handleToggleSound = () => {
+  const handleToggleSound = async () => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      await Notification.requestPermission();
+    }
     getAudioContext();
     setSoundEnabled((prev) => !prev);
   };
@@ -785,5 +788,6 @@ export default function App() {
     </div>
   );
 }
+
 
 
