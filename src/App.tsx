@@ -442,7 +442,7 @@ export default function App() {
       />
 
       {/* Navigation Header */}
-      <header className="sticky top-0 z-30 border-b border-neutral-800/90 bg-[#121212]/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
@@ -451,14 +451,14 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-serif text-lg font-extrabold tracking-wider text-white uppercase">
+                <span className="font-serif text-lg font-extrabold tracking-wider text-black uppercase">
                   Coal
                 </span>
                 <span className="rounded-sm bg-[#c02126] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-widest">
                   Live
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400 font-medium tracking-wide">
+              <p className="text-[11px] text-black font-medium tracking-wide">
                 Digital Waiting List & Staff Dashboard
               </p>
             </div>
