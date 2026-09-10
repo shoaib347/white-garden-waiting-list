@@ -44,8 +44,27 @@ export default function App() {
 
   // Real-time notification banner & drawer state
   const [latestBannerEntry, setLatestBannerEntry] = useState<NewEntryPayload | null>(null);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryItem[]>([]);
+
+  // Derive notifications for the drawer from persistent notification history
+  const notifications: NotificationItem[] = notificationHistory.map(item => ({
+    id: item.id,
+    type: item.status === 'waiting' ? 'new_reservation' : 'status_ready',
+    title: item.status === 'waiting' ? 'New Party Registered' : `Status Update: ${item.status}`,
+    message: `${item.customer_name} — ${item.party_size} People (${item.area_name})`,
+    timestamp: item.notification_created_at,
+    read: item.read,
+    data: {
+      reservation_id: item.reservation_id,
+      customer_name: item.customer_name,
+      mobile: item.mobile,
+      party_size: item.party_size,
+      area_name: item.area_name,
+      queue_number: item.queue_number,
+      created_at: item.reservation_created_at,
+      status: item.status,
+    }
+  }));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -124,17 +143,7 @@ export default function App() {
       setLatestBannerEntry(payload);
 
       // Toast Counter & Notification Drawer: Increase unread badge
-      const newNotification: NotificationItem = {
-        id: `notif_${Date.now()}_${payload.reservation_id}`,
-        type: 'new_reservation',
-        title: 'New Party Registered',
-        message: `${payload.customer_name} - ${payload.party_size} People (${payload.area_name})`,
-        timestamp: payload.created_at || new Date().toISOString(),
-        data: payload,
-        read: false,
-      };
 
-      setNotifications((prev) => [newNotification, ...prev]);
 
       // Dynamic Queue Update: Prepend new customer without page refresh (idempotent check)
       setQueue((prevQueue) => {
@@ -351,9 +360,7 @@ export default function App() {
       })
     );
 
-    setNotifications((prev) =>
-      prev.map((item) => (item.data?.reservation_id === idOrResId ? { ...item, read: true } : item))
-    );
+
 
     if (socket) {
       socket.emit('notification:mark_read', { reservation_id: idOrResId, id: idOrResId });
@@ -375,7 +382,7 @@ export default function App() {
     setNotificationHistory((prev) =>
       prev.map((n) => ({ ...n, read: true, viewed_at: n.viewed_at || now }))
     );
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
 
     try {
       await fetch('/api/v1/notifications/mark-all-read', {
@@ -728,7 +735,7 @@ export default function App() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         notifications={notifications}
-        onClearAll={() => setNotifications([])}
+        onClearAll={() => setNotificationHistory([])}
         onMarkAllRead={handleMarkAllHistoryRead}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
