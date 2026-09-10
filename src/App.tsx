@@ -431,15 +431,17 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col selection:bg-[#D32F2F] selection:text-white font-sans">
       {/* Visual Flash / Banner at top of dashboard */}
-      <RealtimeNotificationBanner
-        entry={latestBannerEntry}
-        onDismiss={handleDismissNotification}
-        onMarkAsRead={handleMarkReadNotification}
-        onMarkAsSeated={handleMarkAsSeated}
-        onJumpToEntry={(resId) => {
-          setCurrentView('staff');
-        }}
-      />
+      {(currentView === 'staff' || currentView === 'split') && (
+        <RealtimeNotificationBanner
+          entry={latestBannerEntry}
+          onDismiss={handleDismissNotification}
+          onMarkAsRead={handleMarkReadNotification}
+          onMarkAsSeated={handleMarkAsSeated}
+          onJumpToEntry={(resId) => {
+            setCurrentView('staff');
+          }}
+        />
+      )}
 
       {/* Navigation Header */}
       <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur-md">
