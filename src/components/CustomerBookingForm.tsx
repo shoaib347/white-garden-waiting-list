@@ -158,7 +158,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* {t('GUEST NAME *')}/}
+          {/* Guest Name */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5">
               {t('GUEST NAME *')}
@@ -283,5 +283,6 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
     </div>
   );
 };
+
 
 
