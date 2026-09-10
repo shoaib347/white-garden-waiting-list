@@ -1,12 +1,6 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Coal Restaurant - Waitlist System
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/1b2bd58e-ce5d-46f0-b992-bdb833fdcf10
+Real-time queuing and live guest tracking system for Coal Restaurant.
 
 ## 🛠 Tech Stack
 - React 19, TypeScript, Tailwind CSS v4, Vite
@@ -27,14 +21,14 @@ This project uses a PostgreSQL database. You must provide a valid `DATABASE_URL`
    ```bash
    bunx prisma db push
    ```
-4. (Optional) Run the seed script to populate sample data from the dashboard via the "Simulate" button or hitting the `POST /api/v1/seed` endpoint.
 
 ### 2. Run the App
 
 1. Install dependencies:
    ```bash
-   bun install
+   npm install
    ```
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+2. Run the app:
+   ```bash
+   npm run dev
+   ```

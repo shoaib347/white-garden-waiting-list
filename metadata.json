@@ -1,6 +1,5 @@
 {
   "name": "Coal Restaurant Waiting List",
   "description": "Real-time digital waiting list and live staff dashboard with WebSocket instant notifications for Coal Restaurant.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "requestFramePermissions": []
 }
