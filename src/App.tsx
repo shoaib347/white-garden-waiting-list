@@ -451,7 +451,12 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <img src="/coal-text-logo.jpg" alt="COAL" className="h-6 object-contain rounded-sm" />
+                <img 
+                  src="/coal-text-logo-dark.png" 
+                  alt="COAL" 
+                  style={{ width: '76.375px', height: '32px' }}
+                  className="object-contain" 
+                />
                 <span className="rounded-sm bg-[#c02126] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-widest">
                   Live
                 </span>
