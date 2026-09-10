@@ -134,10 +134,12 @@ export default function App() {
   }, [branchId]);
 
   useEffect(() => {
-    fetchSettings();
-    fetchQueue();
-    fetchNotificationHistory();
-  }, [fetchSettings, fetchQueue, fetchNotificationHistory]);
+    if (currentView === 'staff' || currentView === 'split') {
+      fetchSettings();
+      fetchQueue();
+      fetchNotificationHistory();
+    }
+  }, [currentView, fetchSettings, fetchQueue, fetchNotificationHistory]);
 
   // Handle URL hash routing (e.g. #ticket=COAL-101)
   useEffect(() => {
@@ -160,8 +162,14 @@ export default function App() {
   useEffect(() => {
     if (!socket) return;
 
-    // Join staff branch room
-    socket.emit('join:staff', { branch_id: branchId });
+    // Join staff branch room on connect/reconnect
+    const onConnect = () => {
+      socket.emit('join:staff', { branch_id: branchId });
+    };
+    if (socket.connected) {
+      onConnect();
+    }
+    socket.on('connect', onConnect);
 
     // 1. WEBSOCKET REAL-TIME ENGINE: Live Listener for `queue:new_entry`
     const handleNewEntry = (payload: NewEntryPayload) => {
@@ -281,6 +289,7 @@ export default function App() {
     socket.on('settings:updated', handleSettingsUpdated);
 
     return () => {
+      socket.off('connect', onConnect);
       socket.off('queue:new_entry', handleNewEntry);
       socket.off('queue:status_changed', handleStatusChanged);
       socket.off('notification:new', handleNotificationNew);
