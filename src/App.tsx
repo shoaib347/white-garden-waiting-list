@@ -24,10 +24,27 @@ import { NotificationDrawer } from './components/NotificationDrawer';
 import { Reservation, QueueStats, NewEntryPayload, StatusChangedPayload, NotificationItem, NotificationHistoryItem } from './types';
 import { playNotificationChime, getAudioContext } from './audioUtils';
 
+import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
+
 type ActiveView = 'staff' | 'booking' | 'ticket' | 'split';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<ActiveView>('staff');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const currentPath = decodeURIComponent(location.pathname.substring(1));
+  let currentView: ActiveView = 'staff';
+  if (currentPath === 'Guest Waitlist Form') currentView = 'booking';
+  else if (currentPath === 'Guest Live Tracker') currentView = 'ticket';
+  else if (currentPath === 'Split Dual Test') currentView = 'split';
+  else if (currentPath === 'Staff Dashboard') currentView = 'staff';
+
+  const setCurrentView = (view: ActiveView) => {
+    if (view === 'staff') navigate('/Staff Dashboard');
+    if (view === 'booking') navigate('/Guest Waitlist Form');
+    if (view === 'ticket') navigate('/Guest Live Tracker');
+    if (view === 'split') navigate('/Split Dual Test');
+  };
   const [branchId, setBranchId] = useState('branch_1');
   const [queue, setQueue] = useState<Reservation[]>([]);
   const [stats, setStats] = useState<QueueStats>({
@@ -434,6 +451,10 @@ export default function App() {
     setActiveReservationId(id);
     setCurrentView('ticket');
   };
+
+  if (location.pathname === '/' || location.pathname === '') {
+    return <Navigate to="/Staff Dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col selection:bg-[#D32F2F] selection:text-white font-sans">
