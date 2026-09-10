@@ -456,9 +456,6 @@ export default function App() {
                   Live
                 </span>
               </div>
-              <p className="text-[11px] text-black font-medium tracking-wide">
-                Digital Waiting List & Staff Dashboard
-              </p>
             </div>
           </div>
 
