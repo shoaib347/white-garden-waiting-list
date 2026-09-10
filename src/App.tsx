@@ -451,14 +451,14 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-serif text-lg font-extrabold tracking-wider text-black uppercase">
+                <span className="font-serif text-lg font-extrabold tracking-wider text-white uppercase">
                   Coal
                 </span>
                 <span className="rounded-sm bg-[#c02126] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-widest">
                   Live
                 </span>
               </div>
-              <p className="text-[11px] text-black font-medium tracking-wide">
+              <p className="text-[11px] text-neutral-400 font-medium tracking-wide">
                 Digital Waiting List & Staff Dashboard
               </p>
             </div>
