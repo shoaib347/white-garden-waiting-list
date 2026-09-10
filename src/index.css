@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-coal-grey: #e4e2df;
+  --color-coal-red: #c02126;
+  --color-coal-black: #000000;
+  
+  --font-title: "title", sans-serif;
+  --font-subtitle: "subtitle", sans-serif;
+  --font-paragraph: "paragraph", sans-serif;
+}
+
+@layer base {
+  @font-face {
+      font-family: title;
+      src: url('https://coal-sa.com/wp-content/themes/coal/assets/fonts/TragicMarker-Regular.ttf');
+  }
+
+  @font-face {
+      font-family: subtitle;
+      src: url('https://coal-sa.com/wp-content/themes/coal/assets/fonts/BarlowCondensed-Bold.ttf');
+  }
+
+  @font-face {
+      font-family: paragraph;
+      src: url('https://coal-sa.com/wp-content/themes/coal/assets/fonts/Barlow-Regular.ttf');
+  }
+
+  body {
+    font-family: var(--font-paragraph);
+    background-color: var(--color-coal-grey) !important;
+    color: var(--color-coal-black) !important;
+  }
+}
+
+@layer utilities {
+  .coal-border {
+    border: 3px solid #000 !important;
+    border-top-left-radius: 80px 15px !important;
+    border-top-right-radius: 15px 70px !important;
+    border-bottom-right-radius: 100px 15px !important;
+    border-bottom-left-radius: 15px 70px !important;
+    background-color: #fff !important;
+    color: #000 !important;
+  }
+  
+  .coal-btn {
+    border: 2px solid #e4e2df !important;
+    border-top-left-radius: 10px 15px !important;
+    border-top-right-radius: 15px 20px !important;
+    border-bottom-right-radius: 30px 15px !important;
+    border-bottom-left-radius: 15px 10px !important;
+    font-family: var(--font-subtitle) !important;
+    text-transform: capitalize !important;
+    background-color: var(--color-coal-red) !important;
+    color: #fff !important;
+  }
+
+  .coal-title {
+    font-family: var(--font-title) !important;
+    color: var(--color-coal-red) !important;
+  }
+  
+  .coal-subtitle {
+    font-family: var(--font-subtitle) !important;
+  }
+}
+
+/* Force dark theme overwrites to match Coal's light rustic theme */
+body {
+  background-color: var(--color-coal-grey) !important;
+}
+
+/* Let the dark panels keep their dark background, but add the rustic border */
+.bg-\[\#141414\], .bg-\[\#181818\], .bg-neutral-900, .bg-neutral-800 { 
+  border-color: #000 !important;
+  border-width: 2px !important;
+}
+
+/* Remove the forced black text so that the original silver/white text from Tailwind comes back! */
+.text-\[\#D32F2F\] { color: var(--color-coal-red) !important; }
+.bg-\[\#D32F2F\] { background-color: var(--color-coal-red) !important; }
+.border-\[\#D32F2F\]\/60 { border-color: var(--color-coal-red) !important; }
+
+/* Global overrides for rounded elements to match the hand-drawn border vibe */
+.rounded-xl, .rounded-2xl, .rounded-lg, .rounded-md {
+    border: 2px solid #000 !important;
+    border-top-left-radius: 20px 5px !important;
+    border-top-right-radius: 5px 20px !important;
+    border-bottom-right-radius: 20px 5px !important;
+    border-bottom-left-radius: 5px 20px !important;
+}
+
+button {
+    font-family: var(--font-subtitle) !important;
+    text-transform: uppercase;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-title) !important;
+    color: var(--color-coal-red) !important;
+}

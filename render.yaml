@@ -1,0 +1,20 @@
+services:
+  # 1. The Node.js Web Service (Backend + Frontend)
+  - type: web
+    name: coal-restaurant-waitlist
+    env: node
+    # Render supports WebSockets automatically
+    buildCommand: bun install && bun run build
+    startCommand: bun run start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coal-postgres
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+  # 2. The PostgreSQL Database
+  - type: psql
+    name: coal-postgres
+    plan: free # Free tier database

@@ -1,0 +1,46 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Reservation {
+  id                  Int       @id @default(autoincrement())
+  reservation_id      String    @unique
+  customer_name       String
+  mobile              String
+  party_size          Int
+  area_name           String
+  queue_number        Int
+  status              String    // 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled' | 'no_show'
+  created_at          DateTime  @default(now())
+  notes               String?
+  branch_id           String
+  estimated_wait_mins Int
+  notified_at         DateTime?
+  seated_at           DateTime?
+
+  notifications NotificationHistory[]
+}
+
+model NotificationHistory {
+  id                      String    @id @default(uuid())
+  reservation_id          String
+  customer_name           String
+  mobile                  String
+  party_size              Int
+  area_name               String
+  queue_number            Int
+  reservation_created_at  DateTime
+  notification_created_at DateTime  @default(now())
+  viewed_at               DateTime?
+  dismissed_at            DateTime?
+  read                    Boolean   @default(false)
+  status                  String
+  branch_id               String
+
+  reservation Reservation @relation(fields: [reservation_id], references: [reservation_id], onDelete: Cascade)
+}
