@@ -731,24 +731,7 @@ export default function App() {
         onTestChime={handleTestChime}
       />
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-900 bg-[#0E0E0E] py-4 text-center text-xs text-neutral-500">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4">
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-[#D32F2F]" />
-            <span className="font-semibold text-neutral-400">Coal Restaurant & Charcoal Hearth</span>
-            <span>·</span>
-            <span>Digital Waiting List Platform</span>
-          </div>
-          <div className="flex items-center gap-4 text-neutral-500">
-            <span>WebSocket Engine (Socket.IO)</span>
-            <span>·</span>
-            <span>Web Audio API Chimes</span>
-            <span>·</span>
-            <span>Node.js / Express</span>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 }
