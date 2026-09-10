@@ -205,7 +205,6 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
               id="input-customer-name"
               type="text"
               required
-              placeholder="e.g., Shoaib"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               className="w-full rounded-xl border border-neutral-700 bg-[#121212] px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-[#D4AF37] focus:outline-hidden"
@@ -223,7 +222,6 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                 id="input-customer-mobile"
                 type="tel"
                 required
-                placeholder="+1 (555) 019-2834"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
                 className="w-full rounded-xl border border-neutral-700 bg-[#121212] pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:border-[#D4AF37] focus:outline-hidden font-mono"
