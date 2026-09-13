@@ -29,7 +29,7 @@ import { Language } from './i18n';
 
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 
-type ActiveView = 'staff' | 'booking' | 'ticket' | 'split';
+type ActiveView = 'staff' | 'booking' | 'ticket';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>(() => {
@@ -45,18 +45,16 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const currentPath = decodeURIComponent(location.pathname.substring(1));
+  const currentPath = decodeURIComponent(location.pathname.replace(/^\/+/, ''));
   let currentView: ActiveView = 'staff';
   if (currentPath === 'Guest Waitlist Form') currentView = 'booking';
   else if (currentPath === 'Guest Live Tracker') currentView = 'ticket';
-  else if (currentPath === 'Split Dual Test') currentView = 'split';
   else if (currentPath === 'Staff Dashboard') currentView = 'staff';
 
   const setCurrentView = (view: ActiveView) => {
     if (view === 'staff') navigate('/Staff Dashboard');
     if (view === 'booking') navigate('/Guest Waitlist Form');
     if (view === 'ticket') navigate('/Guest Live Tracker');
-    if (view === 'split') navigate('/Split Dual Test');
   };
   const [branchId, setBranchId] = useState('branch_1');
   const [queue, setQueue] = useState<Reservation[]>([]);
@@ -149,7 +147,7 @@ export default function App() {
   }, [branchId]);
 
   useEffect(() => {
-    if (currentView === 'staff' || currentView === 'split') {
+    if (currentView === 'staff') {
       fetchSettings();
       fetchQueue();
       fetchNotificationHistory();
@@ -508,7 +506,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#121212] text-white flex flex-col selection:bg-[#D32F2F] selection:text-white font-sans">
       {/* Visual Flash / Banner at top of dashboard */}
-      {(currentView === 'staff' || currentView === 'split') && (
+      {(currentView === 'staff') && (
         <RealtimeNotificationBanner
           entry={latestBannerEntry}
           onDismiss={handleDismissNotification}
@@ -547,7 +545,7 @@ export default function App() {
           {/* Right Status Badges & Controls */}
           <div className="flex items-center gap-2">
             {/* Waitlist Open/Close Toggle (Staff Only) */}
-            {(currentView === 'staff' || currentView === 'split') && (
+            {(currentView === 'staff') && (
               <button
                 onClick={async () => {
                   try {
@@ -598,7 +596,7 @@ export default function App() {
             </button>
 
             {/* Notification Bell Badge */}
-            {(currentView === 'staff' || currentView === 'split') && (
+            {(currentView === 'staff') && (
             <button
               id="header-notifications-bell"
               onClick={() => setIsDrawerOpen(true)}
@@ -676,115 +674,11 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW 4: SPLIT DUAL TEST MODE (Simulate real-time live interaction) */}
-        {currentView === 'split' && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-[#D4AF37]/30 bg-[#1E1911] p-3 text-center text-xs text-[#D4AF37] flex items-center justify-center gap-2">
-              <Sparkles className="h-4 w-4 text-[#D4AF37]" />
-              <span>
-                <strong>Dual Live Verification Mode:</strong> Submit a booking on the left, and watch the Staff Dashboard on the right receive the real-time notification, chime, and prepend the queue instantly!
-              </span>
-            </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              {/* Left Pane: Customer Registration / Live Tracker */}
-              <div className="lg:col-span-5 rounded-2xl border border-neutral-800 bg-[#141414] p-4">
-                <div className="border-b border-neutral-800 pb-3 mb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#D32F2F]/20 text-xs font-bold text-[#D32F2F]">
-                      1
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      Customer Experience
-                    </span>
-                  </div>
-                  <div className="flex gap-1 text-[11px]">
-                    <button
-                      onClick={() => setActiveReservationId('')}
-                      className="rounded px-2 py-0.5 bg-neutral-800 text-neutral-300 hover:text-white"
-                    >
-                      New Form
-                    </button>
-                    {activeReservationId && (
-                      <button
-                        onClick={() => setActiveReservationId(activeReservationId)}
-                        className="rounded px-2 py-0.5 bg-[#D4AF37]/20 text-[#D4AF37]"
-                      >
-                        Active Ticket
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {activeReservationId ? (
-                  <CustomerTicketTracker language={language}
-                    reservationId={activeReservationId}
-                    socket={socket}
-                    onBackToBooking={() => setActiveReservationId('')}
-                  />
-                ) : (
-                  <CustomerBookingForm language={language}
-                    branchId={branchId}
-                    stats={stats}
-                    isWaitlistOpen={isWaitlistOpen}
-                    onSuccess={(resId) => {
-                      setActiveReservationId(resId);
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Right Pane: Staff Dashboard Live */}
-              <div className="lg:col-span-7 rounded-2xl border border-neutral-800 bg-[#141414] p-4">
-                <div className="border-b border-neutral-800 pb-3 mb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#D4AF37]/20 text-xs font-bold text-[#D4AF37]">
-                      2
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                      Live Staff Host Stand
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-emerald-400 flex items-center gap-1 font-mono">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" />
-                    Listening for queue:new_entry
-                  </span>
-                </div>
-
-                {!staffToken ? (
-                  <LoginScreen onLogin={(token) => {
-                    localStorage.setItem('staffToken', token);
-                    setStaffToken(token);
-                  }} />
-                ) : (
-                  <StaffDashboard language={language}
-                    queue={queue}
-                    stats={stats}
-                    branchId={branchId}
-                    onStatusChange={handleStatusChange}
-                    onSimulateWalkIn={handleSimulateWalkIn}
-                    onRefreshQueue={fetchQueue}
-                    soundEnabled={soundEnabled}
-                    onToggleSound={handleToggleSound}
-                    onTestChime={handleTestChime}
-                    unreadCount={unreadCount}
-                    onOpenNotifications={() => setIsDrawerOpen(true)}
-                    onSelectReservationForTracker={handleSelectReservationForTracker}
-                    history={notificationHistory}
-                    onDismissNotification={handleDismissNotification}
-                    onMarkReadNotification={handleMarkReadNotification}
-                    onMarkAllRead={handleMarkAllHistoryRead}
-                    onRefreshHistory={fetchNotificationHistory}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Slide-out Notifications Drawer */}
-      {(currentView === 'staff' || currentView === 'split') && (
+      {(currentView === 'staff') && (
       <NotificationDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
