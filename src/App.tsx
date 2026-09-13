@@ -594,6 +594,7 @@ export default function App() {
             </button>
 
             {/* Notification Bell Badge */}
+            {(currentView === 'staff' || currentView === 'split') && (
             <button
               id="header-notifications-bell"
               onClick={() => setIsDrawerOpen(true)}
@@ -607,6 +608,7 @@ export default function App() {
                 </span>
               )}
             </button>
+            )}
           </div>
         </div>
       </header>
@@ -777,6 +779,7 @@ export default function App() {
       </main>
 
       {/* Slide-out Notifications Drawer */}
+      {(currentView === 'staff' || currentView === 'split') && (
       <NotificationDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -787,6 +790,7 @@ export default function App() {
         onToggleSound={handleToggleSound}
         onTestChime={handleTestChime}
       />
+      )}
 
 
     </div>
