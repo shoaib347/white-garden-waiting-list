@@ -156,7 +156,9 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
       ...rows.map(r => r.join(","))
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Add UTF-8 BOM so Excel properly renders Arabic characters
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
