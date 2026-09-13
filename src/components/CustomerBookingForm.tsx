@@ -13,8 +13,7 @@ interface BookingFormProps {
 }
 
 export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, branchId, stats, isWaitlistOpen = true, language }) => {
-  const { t, i18n } = useTranslation();
-  
+    
   const [customerName, setCustomerName] = useState('');
   const [mobile, setMobile] = useState('');
   const [partySize, setPartySize] = useState<number>(2);
@@ -284,6 +283,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
     </div>
   );
 };
+
 
 
 

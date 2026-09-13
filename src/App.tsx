@@ -37,8 +37,7 @@ export default function App() {
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
   }, [language]);
-  const { t, i18n } = useTranslation();
-  
+    
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -793,6 +792,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

@@ -25,6 +25,7 @@ interface TicketTrackerProps {
   socket: Socket | null;
   onBackToBooking: () => void;
   onSelectAnother?: () => void;
+  language: Language;
 }
 
 export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
@@ -32,6 +33,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
   socket,
   onBackToBooking,
   onSelectAnother,
+  language,
 }) => {
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [peopleAhead, setPeopleAhead] = useState<number>(0);
@@ -310,6 +312,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
     </div>
   );
 };
+
 
 
 

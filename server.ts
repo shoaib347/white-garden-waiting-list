@@ -162,9 +162,9 @@ app.post('/api/v1/auth/login', (req, res) => {
 // GET /api/v1/settings
 app.get('/api/v1/settings', async (req, res) => {
   const branchId = req.query.branch_id as string || 'branch_1';
-  let settings = await prisma.branchSettings.findUnique({ where: { id: branchId } });
+  let settings = await prisma.branch.findUnique({ where: { id: branchId } });
   if (!settings) {
-    settings = await prisma.branchSettings.create({ data: { id: branchId, is_waitlist_open: true } });
+    settings = await prisma.branch.create({ data: { id: branchId, is_waitlist_open: true } });
   }
   res.json(settings);
 });
@@ -175,7 +175,7 @@ app.post('/api/v1/settings', async (req, res) => {
   if (typeof is_waitlist_open !== 'boolean') {
     return res.status(400).json({ error: 'is_waitlist_open boolean is required' });
   }
-  const settings = await prisma.branchSettings.upsert({
+  const settings = await prisma.branch.upsert({
     where: { id: branch_id },
     create: { id: branch_id, is_waitlist_open },
     update: { is_waitlist_open }
@@ -684,3 +684,4 @@ async function startServer() {
 }
 
 startServer();
+
