@@ -1,4 +1,4 @@
-﻿export const translations = {
+export const translations = {
   en: {
     // Header
     "app.title": "Coal",
@@ -244,7 +244,17 @@ export function t(key: TranslationKey, lang: Language, ...args: (string | number
   // @ts-ignore
   let text = translations[lang]?.[key] || translations.en[key] || key;
   args.forEach((arg, index) => {
-    text = text.replace('{'+index+'}', String(arg));
+    // format numbers in args if it's a number
+    let val = typeof arg === 'number' && lang === 'ar' ? arg.toLocaleString('ar-EG') : String(arg);
+    text = text.replace('{'+index+'}', val);
   });
   return text;
 }
+
+export function formatNumber(num: number | string, lang: Language): string {
+  if (lang === 'ar') {
+    return Number(num).toLocaleString('ar-EG');
+  }
+  return String(num);
+}
+

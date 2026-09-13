@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { t, Language } from '../i18n';
+import { t, Language, formatNumber } from '../i18n';
 import { Flame, Users, Phone, MapPin, MessageSquare, CheckCircle, ArrowRight, Sparkles, Clock } from 'lucide-react';
 import { DiningArea, QueueStats } from '../types';
 
@@ -146,7 +146,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
               <span className="text-xs text-neutral-400">{t('stats.minutes', language)}</span>
             </div>
             <div className="mt-1 text-[11px] text-neutral-500">
-              Based on current table turns
+              {t('form.basedOn', language) || 'Based on current table turns'}
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                       : 'border border-neutral-800 bg-[#121212] text-neutral-400 hover:border-neutral-700 hover:text-white'
                   }`}
                 >
-                  {size}{size === 10 ? '+' : ''}
+                  {formatNumber(size, language)}{size === 10 ? '+' : ''}
                 </button>
               ))}
             </div>
