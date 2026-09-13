@@ -32,7 +32,11 @@ import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-
 type ActiveView = 'staff' | 'booking' | 'ticket' | 'split';
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlLang = params.get('lang');
+    return (urlLang === 'ar' || urlLang === 'en') ? urlLang : 'en';
+  });
   useEffect(() => {
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
