@@ -726,6 +726,7 @@ export default function App() {
                   <CustomerBookingForm language={language}
                     branchId={branchId}
                     stats={stats}
+                    isWaitlistOpen={isWaitlistOpen}
                     onSuccess={(resId) => {
                       setActiveReservationId(resId);
                     }}

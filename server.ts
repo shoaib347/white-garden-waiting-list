@@ -277,6 +277,12 @@ app.post('/api/v1/create', async (req, res) => {
     return res.status(400).json({ error: 'Customer name and mobile number are required.' });
   }
 
+  // Check if waitlist is open
+  const settings = await prisma.branchSettings.findUnique({ where: { id: branch_id } });
+  if (settings && !settings.is_waitlist_open) {
+    return res.status(403).json({ error: 'The waitlist is currently closed.' });
+  }
+
   const parsedParty = parseInt(party_size, 10) || 2;
   const branchReservations = await prisma.reservation.findMany({ where: { branch_id } });
   const currentWaiting = branchReservations.filter((r) => r.status === 'waiting' || r.status === 'ready');
