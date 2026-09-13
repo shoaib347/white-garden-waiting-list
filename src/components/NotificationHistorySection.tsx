@@ -120,6 +120,52 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
     };
   };
 
+  const handleExportCSV = () => {
+    if (filteredHistory.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    const headers = [
+      "Reservation ID",
+      "Customer Name",
+      "Mobile",
+      "Party Size",
+      "Area",
+      "Created At",
+      "Status",
+      "Notes"
+    ];
+
+    const rows = filteredHistory.map(item => {
+      const notes = (item as any).reservation?.notes || '';
+      return [
+        item.reservation_id,
+        `"${item.customer_name.replace(/"/g, '""')}"`,
+        `"${item.mobile.replace(/"/g, '""')}"`,
+        item.party_size,
+        `"${item.area_name}"`,
+        `"${new Date(item.reservation_created_at).toLocaleString()}"`,
+        item.status,
+        `"${notes.replace(/"/g, '""')}"`
+      ];
+    });
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `waitlist_history_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const unreadCount = history.filter((h) => !h.read).length;
 
   return (
@@ -149,6 +195,15 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
 
         {/* Global actions */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            title="Export to Excel / CSV"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs font-semibold text-neutral-300 hover:text-white hover:bg-neutral-800 transition"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
           {onRefreshHistory && (
             <button
               onClick={onRefreshHistory}
