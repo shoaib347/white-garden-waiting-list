@@ -147,8 +147,8 @@ export default function App() {
   }, [branchId]);
 
   useEffect(() => {
+    fetchSettings();
     if (currentView === 'staff') {
-      fetchSettings();
       fetchQueue();
       fetchNotificationHistory();
     }
