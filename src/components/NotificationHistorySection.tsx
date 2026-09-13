@@ -41,7 +41,8 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
 }) => {
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'dismissed' | 'seated' | 'cancelled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterDate, setFilterDate] = useState('');
+  const [filterDateStart, setFilterDateStart] = useState('');
+  const [filterDateEnd, setFilterDateEnd] = useState('');
   const [filterTime, setFilterTime] = useState('');
   const [filterPartySize, setFilterPartySize] = useState('');
   const [filterArea, setFilterArea] = useState('All');
@@ -53,9 +54,14 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
     if (filterType === 'seated' && item.status !== 'seated' && item.status !== 'served') return false;
     if (filterType === 'cancelled' && item.status !== 'cancelled') return false;
 
-    if (filterDate) {
+    if (filterDateStart) {
       const itemDate = new Date(item.reservation_created_at).toISOString().split('T')[0];
-      if (itemDate !== filterDate) return false;
+      if (itemDate < filterDateStart) return false;
+    }
+
+    if (filterDateEnd) {
+      const itemDate = new Date(item.reservation_created_at).toISOString().split('T')[0];
+      if (itemDate > filterDateEnd) return false;
     }
 
     if (filterTime) {
@@ -208,8 +214,10 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
         {/* Advanced Filters */}
         <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-neutral-800/50 mt-1 pb-1">
            <div className="flex items-center gap-2">
-             <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Date:</span>
-             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="rounded-md border border-neutral-700 bg-neutral-800/50 py-1 px-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]" />
+             <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Date Range:</span>
+             <input type="date" title="From Date" value={filterDateStart} onChange={e => setFilterDateStart(e.target.value)} className="rounded-md border border-neutral-700 bg-neutral-800/50 py-1 px-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]" />
+             <span className="text-[11px] text-neutral-500">-</span>
+             <input type="date" title="To Date" value={filterDateEnd} onChange={e => setFilterDateEnd(e.target.value)} className="rounded-md border border-neutral-700 bg-neutral-800/50 py-1 px-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]" />
            </div>
            <div className="flex items-center gap-2">
              <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Time:</span>
@@ -228,8 +236,8 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                <option value="Coal Hearth Bar">Coal Hearth Bar</option>
              </select>
            </div>
-           {(filterDate || filterTime || filterPartySize || filterArea !== 'All') && (
-             <button onClick={() => { setFilterDate(''); setFilterTime(''); setFilterPartySize(''); setFilterArea('All'); }} className="text-[11px] text-[#D32F2F] hover:underline font-semibold tracking-wide ml-2">
+           {(filterDateStart || filterDateEnd || filterTime || filterPartySize || filterArea !== 'All') && (
+             <button onClick={() => { setFilterDateStart(''); setFilterDateEnd(''); setFilterTime(''); setFilterPartySize(''); setFilterArea('All'); }} className="text-[11px] text-[#D32F2F] hover:underline font-semibold tracking-wide ml-2">
                Clear Filters
              </button>
            )}
