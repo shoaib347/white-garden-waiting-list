@@ -16,7 +16,8 @@ import {
   Users, 
   MapPin, 
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import { NotificationHistoryItem, ReservationStatus } from '../types';
 
