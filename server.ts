@@ -191,12 +191,45 @@ app.get('/api/v1/queue', async (req, res) => {
     where: { branch_id: branchId },
     orderBy: { created_at: 'desc' }
   });
+
+  // Attach past_visits_count for each reservation
+  const activeMobiles = [...new Set(branchQueue.map(r => r.mobile))];
+  const pastVisitsGroups = await prisma.reservation.groupBy({
+    by: ['mobile'],
+    where: {
+      mobile: { in: activeMobiles },
+      status: { in: ['seated', 'served'] }
+    },
+    _count: {
+      mobile: true
+    }
+  });
+  
+  const visitsMap = Object.fromEntries(pastVisitsGroups.map(g => [g.mobile, g._count.mobile]));
+  const queueWithVisits = branchQueue.map(r => ({
+    ...r,
+    past_visits_count: visitsMap[r.mobile] || 0
+  }));
+
   const stats = await getQueueStats(branchId);
   res.json({
-    queue: branchQueue,
+    queue: queueWithVisits,
     stats,
     branch_id: branchId,
   });
+});
+
+// GET /api/v1/customers/:mobile/history: Fetch past history for a specific customer
+app.get('/api/v1/customers/:mobile/history', async (req, res) => {
+  const { mobile } = req.params;
+  const history = await prisma.reservation.findMany({
+    where: { 
+      mobile, 
+      status: { in: ['seated', 'served', 'cancelled'] } 
+    },
+    orderBy: { created_at: 'desc' }
+  });
+  res.json(history);
 });
 
 // 2. GET /api/v1/reservation/:id: Fetch customer ticket status and people ahead

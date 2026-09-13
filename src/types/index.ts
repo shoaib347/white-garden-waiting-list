@@ -16,6 +16,7 @@ export interface Reservation {
   estimated_wait_mins: number;
   notified_at?: string | null;
   seated_at?: string | null;
+  past_visits_count?: number;
 }
 
 export interface NewEntryPayload {
