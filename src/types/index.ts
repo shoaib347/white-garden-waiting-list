@@ -12,7 +12,7 @@ export interface Reservation {
   status: ReservationStatus;
   created_at: string;
   notes?: string;
-  branch_id: string;
+  branch_id: string;\n  reservation?: { notes: string | null };
   estimated_wait_mins: number;
   notified_at?: string | null;
   seated_at?: string | null;

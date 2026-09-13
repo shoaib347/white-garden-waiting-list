@@ -310,7 +310,8 @@ app.get('/api/v1/notifications/history', async (req, res) => {
   const branchId = (req.query.branch_id as string) || 'branch_1';
   const history = await prisma.notificationHistory.findMany({ 
     where: { branch_id: branchId },
-    orderBy: { notification_created_at: 'desc' }
+    orderBy: { notification_created_at: 'desc' },
+    include: { reservation: { select: { notes: true } } }
   });
   res.json({
     history,

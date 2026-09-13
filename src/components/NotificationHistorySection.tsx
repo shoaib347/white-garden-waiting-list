@@ -332,9 +332,16 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                         </span>
                       )}
                       {item.status === 'cancelled' && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-500 border border-neutral-700">
-                          Cancelled
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-500 border border-neutral-700">
+                            Cancelled
+                          </span>
+                          {(item as any).reservation?.notes && (item as any).reservation?.notes.includes('Cancel Reason:') && (
+                            <span className="text-[10px] text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 max-w-[150px] truncate" title={(item as any).reservation?.notes}>
+                              {(item as any).reservation?.notes.split('Cancel Reason:').pop().trim()}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
 
