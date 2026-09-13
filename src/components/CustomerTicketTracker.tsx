@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import { Socket } from 'socket.io-client';
+import { t, Language } from '../i18n';
 import { Reservation, StatusChangedPayload } from '../types';
 import { playNotificationChime } from '../audioUtils';
 
@@ -90,13 +91,14 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
         setReservation((prev) => (prev ? { ...prev, status: data.status } : prev));
 
         if (data.status === 'ready') {
-          setLastNotification('🔔 Table Ready! Please proceed to the host stand.');
+          setLastNotification(`🔔 ${t('tracker.readyHeading', language)}!`);
+          if ('Notification' in window && Notification.permission === 'granted') { new Notification('Your Table is Ready!', { body: 'Please head to the host stand now.' }); }
           if (soundEnabled) playNotificationChime({ volume: 0.85, type: 'status_call' });
-        } else if (data.status === 'seated' || data.status === 'served') {
-          setLastNotification('✅ Table Seated. Enjoy your dining experience.');
+        } else if (data.status === 'seated') {
+          setLastNotification(`✅ ${t('tracker.seatedHeading', language)}!`);
           if (soundEnabled) playNotificationChime({ volume: 0.85, type: 'status_call' });
         } else if (data.status === 'cancelled') {
-          setLastNotification('❌ Reservation Cancelled.');
+          setLastNotification(`❌ ${t('tracker.cancelledHeading', language)}.`);
           if (soundEnabled) playNotificationChime({ volume: 0.85, type: 'status_call' });
         }
       }
@@ -178,7 +180,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
               Host Call Alert
             </span>
             <h2 className="mt-2 text-2xl font-black text-white font-serif tracking-tight">
-              YOUR TABLE IS READY!
+              {t('tracker.readyHeading', language)}
             </h2>
             <p className="mt-1 text-xs text-neutral-200">
               Please present your ticket #{reservation.queue_number} to the Coal Host Stand at the entrance.
@@ -197,7 +199,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
               className="inline-flex items-center gap-1 hover:text-white transition"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back</span>
+              <span>{t('tracker.back', language)}</span>
             </button>
             <div className="flex items-center gap-2">
               <button
@@ -209,7 +211,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
               </button>
               <button
                 onClick={handleShare}
-                title="Copy share link"
+                title="Copy {t('tracker.share', language)} link"
                 className="rounded-lg border border-neutral-700/80 p-1 text-neutral-400 hover:text-white transition"
               >
                 {copiedLink ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Share2 className="h-3.5 w-3.5" />}
@@ -221,7 +223,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
             <Flame className="h-6 w-6" />
           </div>
           <div className="text-[11px] font-semibold uppercase tracking-widest text-[#D4AF37]">
-            Coal Restaurant Waitlist
+            {t('tracker.restaurant', language)}
           </div>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-white font-serif">
             {reservation.customer_name}
@@ -259,7 +261,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
             ) : isCancelled ? (
               <div className="py-2">
                 <AlertTriangle className="mx-auto h-10 w-10 text-neutral-500 mb-2" />
-                <h4 className="text-base font-bold text-neutral-300">Reservation Cancelled</h4>
+                <h4 className="text-base font-bold text-neutral-300">{t('tracker.cancelledHeading', language)}</h4>
               </div>
             ) : (
               <div>
@@ -308,3 +310,8 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
     </div>
   );
 };
+
+
+
+
+

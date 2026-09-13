@@ -24,16 +24,21 @@ import { NotificationDrawer } from './components/NotificationDrawer';
 import { LoginScreen } from './components/LoginScreen';
 import { Reservation, QueueStats, NewEntryPayload, StatusChangedPayload, NotificationItem, NotificationHistoryItem } from './types';
 import { playNotificationChime, getAudioContext } from './audioUtils';
-import { useTranslation } from 'react-i18next';
-import './i18n';
+import { Languages } from 'lucide-react';
+import { Language } from './i18n';
 
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
 
 type ActiveView = 'staff' | 'booking' | 'ticket' | 'split';
 
 export default function App() {
+  const [language, setLanguage] = useState<Language>('en');
+  useEffect(() => {
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language]);
   const { t, i18n } = useTranslation();
-  const toggleLanguage = () => { i18n.changeLanguage(i18n.language === 'en' ? 'ar' : 'en'); };
+  
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -576,7 +581,7 @@ export default function App() {
             </div>
 
             {/* Audio Toggle button */}
-            {/* <button onClick={toggleLanguage} className="rounded-lg border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs font-bold text-neutral-300 hover:bg-neutral-800 hover:text-white transition uppercase">{i18n.language === "en" ? "???????" : "English"}</button> */}<button
+            <button onClick={() => setLanguage(lang => lang === 'en' ? 'ar' : 'en')} title={language === 'en' ? 'Switch to Arabic (RTL)' : 'Switch to English (LTR)'} className="hidden md:flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-neutral-300 hover:bg-neutral-700 hover:text-white transition"><Languages className="h-4 w-4" /><span className="text-[11px] font-bold uppercase">{language === 'en' ? 'AR' : 'EN'}</span></button><button
               id="header-sound-toggle"
               onClick={handleToggleSound}
               title={soundEnabled ? 'Audio chime alerts enabled' : 'Audio chime alerts muted'}
@@ -617,7 +622,7 @@ export default function App() {
               setStaffToken(token);
             }} />
           ) : (
-            <StaffDashboard
+            <StaffDashboard language={language}
               queue={queue}
               stats={stats}
               branchId={branchId}
@@ -642,7 +647,7 @@ export default function App() {
         {/* VIEW 2: CUSTOMER BOOKING FORM */}
         {currentView === 'booking' && (
           <div className="py-4">
-            <CustomerBookingForm
+            <CustomerBookingForm language={language}
               branchId={branchId}
               stats={stats}
               isWaitlistOpen={isWaitlistOpen}
@@ -657,7 +662,7 @@ export default function App() {
         {/* VIEW 3: CUSTOMER LIVE TICKET TRACKER */}
         {currentView === 'ticket' && (
           <div className="py-4">
-            <CustomerTicketTracker
+            <CustomerTicketTracker language={language}
               reservationId={activeReservationId}
               socket={socket}
               onBackToBooking={() => setCurrentView('booking')}
@@ -707,13 +712,13 @@ export default function App() {
                 </div>
 
                 {activeReservationId ? (
-                  <CustomerTicketTracker
+                  <CustomerTicketTracker language={language}
                     reservationId={activeReservationId}
                     socket={socket}
                     onBackToBooking={() => setActiveReservationId('')}
                   />
                 ) : (
-                  <CustomerBookingForm
+                  <CustomerBookingForm language={language}
                     branchId={branchId}
                     stats={stats}
                     onSuccess={(resId) => {
@@ -746,7 +751,7 @@ export default function App() {
                     setStaffToken(token);
                   }} />
                 ) : (
-                  <StaffDashboard
+                  <StaffDashboard language={language}
                     queue={queue}
                     stats={stats}
                     branchId={branchId}
@@ -788,6 +793,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 
