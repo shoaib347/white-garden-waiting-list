@@ -23,10 +23,28 @@ const io = new SocketIOServer(server, {
 
 // Helper function to calculate stats
 async function getQueueStats(branchId = 'branch_1') {
-  const branchQueue = await prisma.reservation.findMany({ where: { branch_id: branchId } });
-  const waiting = branchQueue.filter((r) => r.status === 'waiting');
-  const ready = branchQueue.filter((r) => r.status === 'ready');
-  const served = branchQueue.filter((r) => r.status === 'served' || r.status === 'seated');
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  // Active queue (waiting or ready)
+  const activeQueue = await prisma.reservation.findMany({
+    where: { 
+      branch_id: branchId,
+      status: { in: ['waiting', 'ready'] }
+    }
+  });
+
+  const waiting = activeQueue.filter((r) => r.status === 'waiting');
+  const ready = activeQueue.filter((r) => r.status === 'ready');
+
+  // Served today
+  const servedCount = await prisma.reservation.count({
+    where: {
+      branch_id: branchId,
+      status: { in: ['seated', 'served'] },
+      created_at: { gte: startOfDay }
+    }
+  });
 
   const avgWait = waiting.length > 0 
     ? Math.round(waiting.reduce((sum, r) => sum + r.estimated_wait_mins, 0) / waiting.length)
@@ -35,7 +53,7 @@ async function getQueueStats(branchId = 'branch_1') {
   return {
     waiting_count: waiting.length,
     calling_count: ready.length,
-    served_count: served.length,
+    served_count: servedCount,
     avg_wait_mins: avgWait,
     outdoor_count: waiting.filter((r) => r.area_name.includes('Outdoor')).length,
     indoor_count: waiting.filter((r) => !r.area_name.includes('Outdoor')).length,
