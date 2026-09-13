@@ -498,6 +498,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         onStatusChange={onStatusChange}
         onSelectReservationForTracker={onSelectReservationForTracker}
         onRefreshHistory={onRefreshHistory}
+        onViewGuestHistory={(mobile, name) => setHistoryModalState({isOpen: true, mobile, name})}
       />
 
       <GuestHistoryModal 

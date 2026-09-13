@@ -29,6 +29,7 @@ interface NotificationHistorySectionProps {
   onStatusChange: (reservationId: string, newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled') => Promise<void>;
   onSelectReservationForTracker?: (reservationId: string) => void;
   onRefreshHistory?: () => void;
+  onViewGuestHistory?: (mobile: string, name: string) => void;
 }
 
 export const NotificationHistorySection: React.FC<NotificationHistorySectionProps> = ({
@@ -39,6 +40,7 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
   onStatusChange,
   onSelectReservationForTracker,
   onRefreshHistory,
+  onViewGuestHistory
 }) => {
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'dismissed' | 'seated' | 'cancelled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -363,7 +365,17 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                         )}
                       </div>
                       <div className="font-semibold text-white mt-1">
-                        {item.customer_name}
+                        {onViewGuestHistory ? (
+                          <button 
+                            onClick={() => onViewGuestHistory(item.mobile, item.customer_name)}
+                            className="hover:text-[#D4AF37] hover:underline text-left transition"
+                            title="Click to view guest history"
+                          >
+                            {item.customer_name}
+                          </button>
+                        ) : (
+                          item.customer_name
+                        )}
                       </div>
                       <div className="text-[11px] text-neutral-400 font-mono">
                         {item.mobile}
