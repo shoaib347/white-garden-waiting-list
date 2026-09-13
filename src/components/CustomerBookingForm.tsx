@@ -205,7 +205,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                 {t('form.partySize', language)}
               </label>
               <span className="text-xs font-bold text-[#D4AF37]">
-                {partySize} {partySize === 1 ? 'Person' : 'People'}
+                {t('form.people', language, partySize)}
               </span>
             </div>
             <div className="grid grid-cols-6 gap-2">
@@ -226,7 +226,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             </div>
           </div>
 
-          {/* Seating Area Preference */}
+          {/* {t('form.area', language)} */}
           <div>
             <label className={`block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5 ${language === "ar" ? "text-right" : "text-left"}`}>
               Seating Area Preference
@@ -253,7 +253,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
           {/* Notes / Special Requests */}
           <div>
             <label className={`block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5 ${language === "ar" ? "text-right" : "text-left"}`}>
-              Special Requests / Notes (Optional)
+              {t('form.notes', language)}
             </label>
             <div className="relative">
               <MessageSquare className="absolute top-3 left-3 h-4 w-4 text-neutral-500" />
