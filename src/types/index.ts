@@ -59,6 +59,7 @@ export interface NotificationHistoryItem {
   read: boolean;
   status: ReservationStatus;
   branch_id: string;
+  past_visits_count?: number;
 }
 
 export interface QueueStats {

@@ -346,10 +346,30 @@ app.get('/api/v1/notifications/history', async (req, res) => {
     orderBy: { notification_created_at: 'desc' },
     include: { reservation: { select: { notes: true } } }
   });
+
+  // Attach past_visits_count for each reservation in history
+  const activeMobiles = [...new Set(history.map(r => r.mobile))];
+  const pastVisitsGroups = await prisma.reservation.groupBy({
+    by: ['mobile'],
+    where: {
+      mobile: { in: activeMobiles },
+      status: { in: ['seated', 'served'] }
+    },
+    _count: {
+      mobile: true
+    }
+  });
+  
+  const visitsMap = Object.fromEntries(pastVisitsGroups.map(g => [g.mobile, g._count.mobile]));
+  const historyWithVisits = history.map(r => ({
+    ...r,
+    past_visits_count: visitsMap[r.mobile] || 0
+  }));
+
   res.json({
-    history,
+    history: historyWithVisits,
     branch_id: branchId,
-    count: history.length,
+    count: historyWithVisits.length,
   });
 });
 

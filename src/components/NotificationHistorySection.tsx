@@ -129,13 +129,14 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
     }
 
     const headers = [
-      "Reservation ID",
+      "ID",
       "Customer Name",
       "Mobile",
       "Party Size",
-      "Area",
-      "Created At",
+      "Seating Area",
+      "Date Joined",
       "Status",
+      "Past Visits",
       "Notes"
     ];
 
@@ -149,6 +150,7 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
         `"${item.area_name}"`,
         `"${new Date(item.reservation_created_at).toLocaleString()}"`,
         item.status,
+        item.past_visits_count || 0,
         `"${notes.replace(/"/g, '""')}"`
       ];
     });
