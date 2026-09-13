@@ -208,8 +208,8 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                 {t('form.people', language, partySize)}
               </span>
             </div>
-            <div className="grid grid-cols-6 gap-2">
-              {[1, 2, 4, 6, 8, 10].map((size) => (
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((size) => (
                 <button
                   key={size}
                   type="button"
