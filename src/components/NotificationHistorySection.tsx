@@ -134,7 +134,8 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
       "Mobile",
       "Party Size",
       "Seating Area",
-      "Date Joined",
+      "Date",
+      "Time",
       "Status",
       "Past Visits",
       "Notes"
@@ -142,13 +143,15 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
 
     const rows = filteredHistory.map(item => {
       const notes = (item as any).reservation?.notes || '';
+      const dateObj = new Date(item.reservation_created_at);
       return [
         item.reservation_id,
         `"${item.customer_name.replace(/"/g, '""')}"`,
         `"${item.mobile.replace(/"/g, '""')}"`,
         item.party_size,
         `"${item.area_name}"`,
-        `"${new Date(item.reservation_created_at).toLocaleString()}"`,
+        `"${dateObj.toLocaleDateString()}"`,
+        `"${dateObj.toLocaleTimeString()}"`,
         item.status,
         item.past_visits_count || 0,
         `"${notes.replace(/"/g, '""')}"`
