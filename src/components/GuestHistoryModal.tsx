@@ -22,7 +22,7 @@ export const GuestHistoryModal: React.FC<GuestHistoryModalProps> = ({
   useEffect(() => {
     if (isOpen && mobile) {
       setLoading(true);
-      fetch(\/api/v1/customers/\/history\)
+      fetch(`/api/v1/customers/${encodeURIComponent(mobile)}/history`)
         .then(res => res.json())
         .then(data => {
           setHistory(Array.isArray(data) ? data : []);
@@ -95,7 +95,11 @@ export const GuestHistoryModal: React.FC<GuestHistoryModalProps> = ({
                             {visitDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         </div>
-                        <span className={\ounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider \\}>
+                        <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          isSeated ? 'bg-[#4CAF50]/10 text-[#4CAF50] border border-[#4CAF50]/20' : 
+                          isCancelled ? 'bg-[#F44336]/10 text-[#F44336] border border-[#F44336]/20' : 
+                          'bg-neutral-800 text-neutral-400'
+                        }`}>
                           {visit.status}
                         </span>
                       </div>

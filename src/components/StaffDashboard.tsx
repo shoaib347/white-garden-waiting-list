@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Reservation, QueueStats, NotificationHistoryItem, ReservationStatus } from '../types';
 import { NotificationHistorySection } from './NotificationHistorySection';
+import { GuestHistoryModal } from './GuestHistoryModal';
 
 interface StaffDashboardProps {
   queue: Reservation[];
@@ -63,7 +64,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   onRefreshHistory,
 }) => {
   const [filterArea, setFilterArea] = useState<string>('ALL');
-  const [filterStatus, setFilterStatus] = useState<string>('active'); // 'active' (waiting+ready), 'waiting', 'ready', 'seated', 'all'
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'seated' | 'cancelled' | 'no_show'>('active');
+  const [historyModalState, setHistoryModalState] = useState<{isOpen: boolean, mobile: string, name: string}>({isOpen: false, mobile: '', name: ''});
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
@@ -341,7 +343,20 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                       {/* Guest name & mobile */}
                       <td className="px-4 py-3.5">
                         <div className="font-semibold text-white group-hover:text-[#D4AF37] transition flex items-center gap-1.5">
-                          {item.customer_name}
+                          {item.past_visits_count && item.past_visits_count > 0 ? (
+                            <button 
+                              onClick={() => setHistoryModalState({isOpen: true, mobile: item.mobile, name: item.customer_name})}
+                              className="flex items-center gap-1.5 hover:underline"
+                              title={`${item.past_visits_count} past visits. Click to view history.`}
+                            >
+                              {item.customer_name}
+                              <span className="rounded-full bg-[#D4AF37]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#D4AF37] border border-[#D4AF37]/30 flex items-center gap-1">
+                                🌟 Returning ({item.past_visits_count})
+                              </span>
+                            </button>
+                          ) : (
+                            item.customer_name
+                          )}
                           {isNewest && (
                             <span className="rounded bg-[#D32F2F] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-wider">
                               New
@@ -483,6 +498,13 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         onStatusChange={onStatusChange}
         onSelectReservationForTracker={onSelectReservationForTracker}
         onRefreshHistory={onRefreshHistory}
+      />
+
+      <GuestHistoryModal 
+        isOpen={historyModalState.isOpen} 
+        onClose={() => setHistoryModalState({isOpen: false, mobile: '', name: ''})} 
+        mobile={historyModalState.mobile} 
+        customerName={historyModalState.name} 
       />
     </div>
   );
