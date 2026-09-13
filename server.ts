@@ -23,8 +23,13 @@ const io = new SocketIOServer(server, {
 
 // Helper function to calculate stats
 async function getQueueStats(branchId = 'branch_1') {
+  // Reset "today" at 11 AM
   const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  if (startOfDay.getHours() < 11) {
+    // If it's before 11 AM, "today" started yesterday at 11 AM
+    startOfDay.setDate(startOfDay.getDate() - 1);
+  }
+  startOfDay.setHours(11, 0, 0, 0);
 
   // Active queue (waiting or ready)
   const activeQueue = await prisma.reservation.findMany({
