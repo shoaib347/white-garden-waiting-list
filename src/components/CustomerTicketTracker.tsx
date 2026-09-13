@@ -16,7 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import { Socket } from 'socket.io-client';
-import { t, Language } from '../i18n';
+import { t, Language, formatNumber } from '../i18n';
 import { Reservation, StatusChangedPayload } from '../types';
 import { playNotificationChime } from '../audioUtils';
 
@@ -232,7 +232,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
           </h1>
 
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-900/80 px-3 py-1 font-mono text-xs text-neutral-300">
-            <span>Ticket: #{reservation.queue_number}</span>
+            <span>{t('tracker.ticket', language)}: #{formatNumber(reservation.queue_number, language)}</span>
             <span className="text-neutral-600">|</span>
             <span className="text-[#D4AF37]">{reservation.reservation_id}</span>
           </div>
@@ -268,14 +268,14 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
             ) : (
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-widest text-neutral-400">
-                  Parties Ahead in Line
+                  {t('tracker.partiesAhead', language)}
                 </div>
                 <div className="mt-1 text-5xl font-black tracking-tight text-white font-serif">
                   {peopleAhead}
                 </div>
                 <p className="mt-2 text-xs text-neutral-400 flex items-center justify-center gap-1">
                   <Clock className="h-3.5 w-3.5 text-[#D4AF37]" />
-                  Estimated wait: <strong className="text-white">~{estimatedWait} mins</strong>
+                  {t('tracker.estimatedWait', language)}: <strong className="text-white">~{formatNumber(estimatedWait, language)} {t('tracker.mins', language)}</strong>
                 </p>
               </div>
             )}
@@ -285,7 +285,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-lg border border-neutral-800 bg-[#141414] p-3">
               <div className="text-[10px] uppercase text-neutral-500 flex items-center gap-1">
-                <Users className="h-3 w-3 text-[#D4AF37]" /> Party Size
+                <Users className="h-3 w-3 text-[#D4AF37]" /> {t('tracker.partySize', language)}
               </div>
               <div className="mt-1 font-semibold text-white">
                 {reservation.party_size} {reservation.party_size === 1 ? 'Guest' : 'Guests'}
@@ -294,7 +294,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
 
             <div className="rounded-lg border border-neutral-800 bg-[#141414] p-3">
               <div className="text-[10px] uppercase text-neutral-500 flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-[#D32F2F]" /> Seating Area
+                <MapPin className="h-3 w-3 text-[#D32F2F]" /> {t('tracker.seatingArea', language)}
               </div>
               <div className="mt-1 font-semibold text-white truncate">
                 {reservation.area_name}
@@ -305,7 +305,7 @@ export const CustomerTicketTracker: React.FC<TicketTrackerProps> = ({
 
           {/* Instructions */}
           <div className="text-[11px] text-neutral-400 text-center leading-relaxed">
-            Please remain nearby the restaurant perimeter. You will receive an instant audio and screen chime when your table is prepared.
+            {t('tracker.perimeter', language)}
           </div>
         </div>
       </div>
