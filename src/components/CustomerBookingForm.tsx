@@ -226,10 +226,10 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
             </div>
           </div>
 
-          {/* {t('form.area', language)} */}
+          {/* Seating Area Preference */}
           <div>
             <label className={`block text-xs font-semibold uppercase tracking-wider text-neutral-300 mb-1.5 ${language === "ar" ? "text-right" : "text-left"}`}>
-              Seating Area Preference
+              {t('form.area', language)}
             </label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {areas.map((area) => (
@@ -243,8 +243,8 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
                       : 'border-neutral-800 bg-[#121212] text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                   }`}
                 >
-                  <div className="text-xs font-bold text-white">{t("area.${area.name}" as any, language)}</div>
-                  <div className="text-[11px] text-neutral-400 mt-0.5">{t("area_desc.${area.name}" as any, language)}</div>
+                  <div className="text-xs font-bold text-white">{t(`area.${area.name}` as any, language) || area.name}</div>
+                  <div className="text-[11px] text-neutral-400 mt-0.5">{t(`area_desc.${area.name}` as any, language) || area.desc}</div>
                 </button>
               ))}
             </div>
@@ -259,10 +259,10 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
               <MessageSquare className="absolute top-3 left-3 h-4 w-4 text-neutral-500" />
               <textarea
                 rows={2}
-                placeholder="High chair requested, anniversary celebration, outdoor heat lamp section..."
+                placeholder={t('form.notesPlaceholder', language)}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full rounded-xl border border-neutral-700 bg-[#121212] pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#D4AF37] focus:outline-hidden"
+                className={`w-full rounded-xl border border-neutral-700 bg-[#121212] py-2.5 text-xs text-white placeholder-neutral-500 focus:border-[#D4AF37] focus:outline-hidden ${language === 'ar' ? 'pr-10 pl-3.5 text-right' : 'pl-10 pr-3.5 text-left'}`}
               />
             </div>
           </div>
