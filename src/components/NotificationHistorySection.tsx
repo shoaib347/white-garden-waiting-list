@@ -494,20 +494,6 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                             <span>Seat</span>
                           </button>
                         )}
-
-                        {/* Mark as read */}
-                        {!item.read && (
-                          <button
-                            id={`history-btn-read-${item.id}`}
-                            disabled={loadingId === item.id}
-                            onClick={() => handleMarkRead(item.id, item.reservation_id)}
-                            title="Mark notification as read"
-                            className="inline-flex items-center gap-1 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-xs font-medium text-neutral-300 hover:text-white hover:border-neutral-500 transition disabled:opacity-50"
-                          >
-                            <Check className="h-3 w-3" />
-                            <span>Read</span>
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
