@@ -82,7 +82,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
 
   if (!isWaitlistOpen) {
     return (
-      <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-8 text-center shadow-2xl">
+      <div className="mx-auto w-full overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-8 text-center shadow-2xl">
         <div className="mx-auto mb-4 flex items-center justify-center gap-3">
           <img src="https://coal-sa.com/wp-content/uploads/2024/02/header_logo.png" alt="Coal Icon" className="h-16 object-contain filter invert" />
           <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert mix-blend-screen" />
@@ -107,7 +107,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
       </div>
     );
   }  return (
-    <div className="mx-auto max-w-xl">
+    <div className="mx-auto w-full">
       <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-6 sm:p-8 shadow-2xl">
         {/* Header */}
         <div className="mb-6 border-b border-neutral-800/80 pb-5 text-center">
