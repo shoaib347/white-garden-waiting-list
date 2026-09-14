@@ -191,7 +191,7 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                 Historical Notifications & Audit Log
               </h3>
               <span className="rounded-full bg-[#D4AF37]/20 px-2 py-0.5 text-[10px] font-bold text-[#D4AF37] border border-[#D4AF37]/30">
-                {history.length} Logged
+                {filteredHistory.length} Logged
               </span>
               {unreadCount > 0 && (
                 <span className="rounded-full bg-[#D32F2F] px-2 py-0.5 text-[10px] font-bold text-white animate-pulse">
