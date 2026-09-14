@@ -113,8 +113,12 @@ async function updateReservationStatus(reservationId: string, newStatus: Reserva
     updateData.seated_at = now;
   }
 
-  if (reason && newStatus === 'cancelled') {
-    updateData.notes = reservation.notes ? `${reservation.notes} | Cancel Reason: ${reason}` : `Cancel Reason: ${reason}`;
+  if (reason) {
+    if (newStatus === 'cancelled') {
+      updateData.notes = reservation.notes ? `${reservation.notes} | Cancel Reason: ${reason}` : `Cancel Reason: ${reason}`;
+    } else if (reason === 'Takeaway') {
+      updateData.notes = reservation.notes ? `${reservation.notes} | [TAKEAWAY]` : `[TAKEAWAY]`;
+    }
   }
 
   const updatedReservation = await prisma.reservation.update({

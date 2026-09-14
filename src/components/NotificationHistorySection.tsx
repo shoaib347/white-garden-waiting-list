@@ -349,6 +349,10 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                 const viewTime = formatTimestamp(item.viewed_at);
                 const dismissTime = formatTimestamp(item.dismissed_at);
                 const isSeated = item.status === 'seated' || item.status === 'served';
+                
+                const rawNotes = (item as any).reservation?.notes || '';
+                const isWalkIn = rawNotes.includes('[WALK-IN]');
+                const isTakeaway = rawNotes.includes('[TAKEAWAY]');
 
                 return (
                   <tr
@@ -369,7 +373,7 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                           </span>
                         )}
                       </div>
-                      <div className="font-semibold text-white mt-1">
+                      <div className="font-semibold text-white mt-1 flex items-center gap-1.5 flex-wrap">
                         {onViewGuestHistory ? (
                           <button 
                             onClick={() => onViewGuestHistory(item.mobile, item.customer_name)}
@@ -381,8 +385,20 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                         ) : (
                           item.customer_name
                         )}
+                        
+                        {isWalkIn && (
+                          <span className="rounded bg-neutral-700/80 px-1.5 py-0.2 text-[9px] font-bold text-neutral-200 border border-neutral-600 uppercase tracking-wider">
+                            Walk-In
+                          </span>
+                        )}
+                        
+                        {isTakeaway && (
+                          <span className="rounded bg-sky-950/40 px-1.5 py-0.2 text-[9px] font-bold text-sky-400 border border-sky-500/50 uppercase tracking-wider">
+                            Takeaway
+                          </span>
+                        )}
                       </div>
-                      <div className="text-[11px] text-neutral-400 font-mono">
+                      <div className="text-[11px] text-neutral-400 font-mono mt-0.5">
                         {item.mobile}
                       </div>
                     </td>
