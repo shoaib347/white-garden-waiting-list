@@ -455,7 +455,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                         <div className="inline-flex items-center justify-end gap-1.5">
 
                           {/* "Call Customer" (waiting -> ready) */}
-                          {item.status === 'waiting' && (
+                          {item.status === 'waiting' && !isWalkIn && (
                             <button
                               id={`btn-call-${item.reservation_id}`}
                               disabled={actionLoadingId === item.reservation_id}
@@ -467,8 +467,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             </button>
                           )}
 
-                          {/* "Seat Customer" (ready -> seated) */}
-                          {item.status === 'ready' && (
+                          {/* "Seat Customer" (ready -> seated, or direct for Walk-ins) */}
+                          {(item.status === 'ready' || (item.status === 'waiting' && isWalkIn)) && (
                             <button
                               id={`btn-seat-${item.reservation_id}`}
                               disabled={actionLoadingId === item.reservation_id}
@@ -480,8 +480,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             </button>
                           )}
 
-                          {/* "Takeaway" (active -> served) */}
-                          {item.status === 'ready' && (
+                          {/* "Takeaway" (active -> served, or direct for Walk-ins) */}
+                          {(item.status === 'ready' || (item.status === 'waiting' && isWalkIn)) && (
                             <button
                               disabled={actionLoadingId === item.reservation_id}
                               onClick={() => handleAction(item.reservation_id, 'served', 'Takeaway')}
