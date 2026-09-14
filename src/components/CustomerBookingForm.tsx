@@ -83,8 +83,9 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
   if (!isWaitlistOpen) {
     return (
       <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-8 text-center shadow-2xl">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-neutral-400">
-          <Clock className="h-8 w-8" />
+        <div className="mx-auto mb-4 flex items-center justify-center gap-3">
+          <img src="https://coal-sa.com/wp-content/uploads/2024/02/header_logo.png" alt="Coal Icon" className="h-16 object-contain filter invert" />
+          <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert" />
         </div>
         <h2 className="mt-3 text-2xl font-bold text-white font-serif tracking-tight">{t('form.title', language)}</h2>
         <p className="mt-2 text-sm text-neutral-400 mb-6">
@@ -110,8 +111,9 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
       <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-6 sm:p-8 shadow-2xl">
         {/* Header */}
         <div className="mb-6 border-b border-neutral-800/80 pb-5 text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl border border-[#D32F2F]/40 bg-[#250F12] text-[#D32F2F]">
-            <Flame className="h-6 w-6" />
+          <div className="mx-auto mb-4 flex items-center justify-center gap-3">
+            <img src="https://coal-sa.com/wp-content/uploads/2024/02/header_logo.png" alt="Coal Icon" className="h-16 object-contain filter invert" />
+            <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert" />
           </div>
           <h2 className="text-xl font-bold tracking-tight text-white font-serif sm:text-2xl">
             {t('form.title', language)}
