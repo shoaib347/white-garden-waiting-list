@@ -85,7 +85,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
       <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-neutral-800 bg-[#161616] p-8 text-center shadow-2xl">
         <div className="mx-auto mb-4 flex items-center justify-center gap-3">
           <img src="https://coal-sa.com/wp-content/uploads/2024/02/header_logo.png" alt="Coal Icon" className="h-16 object-contain filter invert" />
-          <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert" />
+          <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert mix-blend-screen" />
         </div>
         <h2 className="mt-3 text-2xl font-bold text-white font-serif tracking-tight">{t('form.title', language)}</h2>
         <p className="mt-2 text-sm text-neutral-400 mb-6">
@@ -113,7 +113,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
         <div className="mb-6 border-b border-neutral-800/80 pb-5 text-center">
           <div className="mx-auto mb-4 flex items-center justify-center gap-3">
             <img src="https://coal-sa.com/wp-content/uploads/2024/02/header_logo.png" alt="Coal Icon" className="h-16 object-contain filter invert" />
-            <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert" />
+            <img src="/coal-text-logo-dark.png" alt="COAL" style={{ width: '100px', height: '42px' }} className="object-contain filter invert mix-blend-screen" />
           </div>
           <h2 className="text-xl font-bold tracking-tight text-white font-serif sm:text-2xl">
             {t('form.title', language)}
