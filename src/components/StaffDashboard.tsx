@@ -481,7 +481,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                           )}
 
                           {/* "Takeaway" (active -> served) */}
-                          {(item.status === 'waiting' || item.status === 'ready') && (
+                          {item.status === 'ready' && (
                             <button
                               disabled={actionLoadingId === item.reservation_id}
                               onClick={() => handleAction(item.reservation_id, 'served', 'Takeaway')}
