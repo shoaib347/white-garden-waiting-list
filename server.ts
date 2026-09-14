@@ -271,15 +271,15 @@ app.get('/api/v1/reservation/:id', async (req, res) => {
 
 // 3. POST /api/v1/create: Submit new reservation from Customer Booking Form
 app.post('/api/v1/create', async (req, res) => {
-  const { customer_name, mobile, party_size, area_name, notes, branch_id = 'branch_1' } = req.body;
+  const { customer_name, mobile, party_size, area_name, notes, branch_id = 'branch_1', is_walkin } = req.body;
 
   if (!customer_name || !mobile) {
     return res.status(400).json({ error: 'Customer name and mobile number are required.' });
   }
 
-  // Check if waitlist is open
+  // Check if waitlist is open (skip for staff walk-ins)
   const settings = await prisma.branchSettings.findUnique({ where: { id: branch_id } });
-  if (settings && !settings.is_waitlist_open) {
+  if (settings && !settings.is_waitlist_open && !is_walkin) {
     return res.status(403).json({ error: 'The waitlist is currently closed.' });
   }
 
@@ -332,6 +332,7 @@ app.post('/api/v1/create', async (req, res) => {
     created_at: newReservation.created_at.toISOString(),
     status: newReservation.status,
     estimated_wait_mins: newReservation.estimated_wait_mins,
+    notes: newReservation.notes,
   };
 
   io.to(`branch_${branch_id}`).emit('queue:new_entry', newEntryPayload);

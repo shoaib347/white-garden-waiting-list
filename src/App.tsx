@@ -213,6 +213,8 @@ export default function App() {
           created_at: payload.created_at || new Date().toISOString(),
           branch_id: branchId,
           estimated_wait_mins: payload.estimated_wait_mins || 5,
+          notes: payload.notes,
+          past_visits_count: payload.past_visits_count || 0,
           notified_at: null,
           seated_at: null,
         };
@@ -472,6 +474,7 @@ export default function App() {
         body: JSON.stringify({
           ...data,
           branch_id: branchId,
+          is_walkin: true,
         }),
       });
       // socket event will update UI

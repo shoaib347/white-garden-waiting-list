@@ -30,6 +30,7 @@ export interface NewEntryPayload {
   notification_id?: string;
   status?: ReservationStatus;
   estimated_wait_mins?: number;
+  notes?: string;
 }
 
 export interface StatusChangedPayload {
