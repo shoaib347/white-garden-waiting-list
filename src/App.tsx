@@ -526,7 +526,7 @@ export default function App() {
 
       {/* Navigation Header */}
       <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           {/* Brand Logo */}
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center">
@@ -622,7 +622,7 @@ export default function App() {
       </header>
 
       {/* Main Content Body */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+      <main className="mx-auto w-full flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {/* VIEW 1: STAFF DASHBOARD */}
         {currentView === 'staff' && (
           !staffToken ? (
