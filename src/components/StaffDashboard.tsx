@@ -20,6 +20,7 @@ import {
   ExternalLink,
   History,
   UserPlus,
+  ShoppingBag,
 } from 'lucide-react';
 import { Reservation, QueueStats, NotificationHistoryItem, ReservationStatus } from '../types';
 import { NotificationHistorySection } from './NotificationHistorySection';
@@ -30,7 +31,7 @@ interface StaffDashboardProps {
   queue: Reservation[];
   stats: QueueStats;
   branchId: string;
-  onStatusChange: (reservationId: string, newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled') => Promise<void>;
+  onStatusChange: (reservationId: string, newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled', reason?: string) => Promise<void>;
   onCreateWalkIn: (data: { customer_name: string; mobile: string; party_size: number; area_name: string; notes: string }) => Promise<void>;
   onRefreshQueue: () => void;
   soundEnabled: boolean;
@@ -97,20 +98,20 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
     return true;
   });
 
-  const handleAction = async (reservationId: string, status: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled') => {
-    let cancelReason = undefined;
-    if (status === 'cancelled') {
+  const handleAction = async (reservationId: string, status: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled', optionalReason?: string) => {
+    let actionReason = optionalReason;
+    if (status === 'cancelled' && !actionReason) {
       const reason = window.prompt("Please enter a mandatory reason for cancelling this reservation (e.g., No show, Guest requested):");
       if (!reason || !reason.trim()) {
         alert("Cancellation aborted: Reason is mandatory.");
         return;
       }
-      cancelReason = reason.trim();
+      actionReason = reason.trim();
     }
     
     try {
       setActionLoadingId(reservationId);
-      await onStatusChange(reservationId, status, cancelReason);
+      await onStatusChange(reservationId, status, actionReason);
     } finally {
       setActionLoadingId(null);
     }
@@ -476,6 +477,19 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                             >
                               <UserCheck className="h-3 w-3" />
                               <span>Seat Customer</span>
+                            </button>
+                          )}
+
+                          {/* "Takeaway" (active -> served) */}
+                          {(item.status === 'waiting' || item.status === 'ready') && (
+                            <button
+                              disabled={actionLoadingId === item.reservation_id}
+                              onClick={() => handleAction(item.reservation_id, 'served', 'Takeaway')}
+                              title="Mark as Takeaway"
+                              className="inline-flex items-center gap-1 rounded-lg border border-sky-500/50 bg-sky-950/40 px-2 py-1 text-xs font-semibold text-sky-400 hover:bg-sky-900/50 hover:border-sky-400 active:scale-95 transition disabled:opacity-50"
+                            >
+                              <ShoppingBag className="h-3 w-3" />
+                              <span>Takeaway</span>
                             </button>
                           )}
 
