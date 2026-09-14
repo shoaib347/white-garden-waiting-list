@@ -146,7 +146,7 @@ export const CustomerBookingForm: React.FC<BookingFormProps> = ({ onSuccess, bra
               <span className="text-xs text-neutral-400">{t('stats.minutes', language)}</span>
             </div>
             <div className="mt-1 text-[11px] text-neutral-500">
-              {t('form.basedOn', language) || 'Based on current table turns'}
+              {t('stats.basedOnTurns', language) || 'Based on current table turns'}
             </div>
           </div>
         </div>
