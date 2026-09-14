@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, Phone, MapPin, User, FileText, X } from 'lucide-react';
 
@@ -66,7 +66,6 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full rounded-xl border border-neutral-700 bg-neutral-900/50 py-2.5 pl-10 pr-4 text-white focus:border-[#D32F2F] focus:outline-none focus:ring-1 focus:ring-[#D32F2F] transition"
-                    placeholder="John Doe"
                   />
                 </div>
               </div>
@@ -81,7 +80,6 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                     className="w-full rounded-xl border border-neutral-700 bg-neutral-900/50 py-2.5 pl-10 pr-4 text-white focus:border-[#D32F2F] focus:outline-none focus:ring-1 focus:ring-[#D32F2F] transition text-left"
-                    placeholder="05XXXXXXXX"
                     dir="ltr"
                   />
                 </div>
@@ -130,7 +128,6 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
                     onChange={(e) => setNotes(e.target.value)}
                     rows={2}
                     className="w-full rounded-xl border border-neutral-700 bg-neutral-900/50 py-2.5 pl-10 pr-4 text-white focus:border-[#D32F2F] focus:outline-none focus:ring-1 focus:ring-[#D32F2F] transition resize-none"
-                    placeholder="High chair, preferences..."
                   />
                 </div>
               </div>
