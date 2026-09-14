@@ -26,7 +26,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
       mobile: mobile.trim(),
       party_size: partySize,
       area_name: area,
-      notes: notes.trim(),
+      notes: notes.trim() ? `[WALK-IN] ${notes.trim()}` : '[WALK-IN]',
     });
     
     // Reset and close

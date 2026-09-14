@@ -329,6 +329,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                   const isNewest = idx === 0 && (Date.now() - new Date(item.created_at).getTime() < 60000);
                   const isReady = item.status === 'ready';
                   const isServed = item.status === 'served';
+                  const isWalkIn = item.notes?.includes('[WALK-IN]');
+                  const cleanNotes = item.notes?.replace('[WALK-IN]', '').trim();
 
                   return (
                     <motion.tr
@@ -354,7 +356,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
 
                       {/* Guest name & mobile */}
                       <td className="px-4 py-3.5">
-                        <div className="font-semibold text-white group-hover:text-[#D4AF37] transition flex items-center gap-1.5">
+                        <div className="font-semibold text-white group-hover:text-[#D4AF37] transition flex items-center gap-1.5 flex-wrap">
                           {item.past_visits_count && item.past_visits_count > 0 ? (
                             <button 
                               onClick={() => setHistoryModalState({isOpen: true, mobile: item.mobile, name: item.customer_name})}
@@ -369,19 +371,26 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                           ) : (
                             item.customer_name
                           )}
+                          
+                          {isWalkIn && (
+                            <span className="rounded bg-neutral-700/80 px-1.5 py-0.2 text-[9px] font-bold text-neutral-200 border border-neutral-600 uppercase tracking-wider">
+                              Walk-In
+                            </span>
+                          )}
+
                           {isNewest && (
                             <span className="rounded bg-[#D32F2F] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-wider">
                               New
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-mono">
+                        <div className="flex items-center gap-1 text-[11px] text-neutral-400 font-mono mt-0.5">
                           <Phone className="h-3 w-3 text-neutral-500" />
                           {item.mobile}
                         </div>
-                        {item.notes && (
+                        {cleanNotes && (
                           <div className="mt-1 text-[11px] italic text-neutral-400 line-clamp-1 max-w-xs">
-                            "{item.notes}"
+                            "{cleanNotes}"
                           </div>
                         )}
                       </td>
