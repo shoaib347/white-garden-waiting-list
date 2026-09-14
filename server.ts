@@ -53,7 +53,7 @@ async function getQueueStats(branchId = 'branch_1') {
 
   const avgWait = waiting.length > 0 
     ? Math.round(waiting.reduce((sum, r) => sum + r.estimated_wait_mins, 0) / waiting.length)
-    : 15;
+    : 5;
 
   return {
     waiting_count: waiting.length,
@@ -470,8 +470,8 @@ app.get('/api/v1/analytics/wait-times', async (req, res) => {
   const branchId = (req.query.branch_id as string) || 'branch_1';
   const branchQueue = await prisma.reservation.findMany({ where: { branch_id: branchId } });
   const currentAvgWait = branchQueue.length > 0
-    ? Math.round(branchQueue.reduce((acc, r) => acc + (r.estimated_wait_mins || 15), 0) / branchQueue.length)
-    : 20;
+    ? Math.round(branchQueue.reduce((acc, r) => acc + (r.estimated_wait_mins || 5), 0) / branchQueue.length)
+    : 5;
 
   // Generate 7 days ending today
   const days = [];
