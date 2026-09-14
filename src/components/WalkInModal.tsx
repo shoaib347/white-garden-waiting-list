@@ -12,7 +12,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [partySize, setPartySize] = useState(2);
-  const [area, setArea] = useState('Indoor Dining');
+  const [area, setArea] = useState('Main Dining Room');
   const [notes, setNotes] = useState('');
 
   if (!isOpen) return null;
@@ -33,7 +33,7 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
     setName('');
     setMobile('');
     setPartySize(2);
-    setArea('Indoor Dining');
+    setArea('Main Dining Room');
     setNotes('');
     onClose();
   };
@@ -111,9 +111,9 @@ export const WalkInModal: React.FC<WalkInModalProps> = ({ isOpen, onClose, onSub
                       onChange={(e) => setArea(e.target.value)}
                       className="w-full appearance-none rounded-xl border border-neutral-700 bg-neutral-900/50 py-2.5 pl-10 pr-8 text-white focus:border-[#D32F2F] focus:outline-none focus:ring-1 focus:ring-[#D32F2F] transition"
                     >
-                      <option value="Indoor Dining">Indoor</option>
-                      <option value="Outdoor Terrace">Outdoor</option>
-                      <option value="VIP Lounge">VIP</option>
+                      <option value="Main Dining Room">Main Dining Room</option>
+                      <option value="Outdoor Terrace">Outdoor Terrace</option>
+                      <option value="Coal Hearth Bar">Coal Hearth Bar</option>
                     </select>
                   </div>
                 </div>
