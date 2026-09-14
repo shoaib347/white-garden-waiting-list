@@ -62,7 +62,7 @@ export default function App() {
     waiting_count: 0,
     calling_count: 0,
     served_count: 0,
-    avg_wait_mins: 15,
+    avg_wait_mins: 5,
     outdoor_count: 0,
     indoor_count: 0,
   });
@@ -125,7 +125,7 @@ export default function App() {
         waiting_count: 0,
         calling_count: 0,
         served_count: 0,
-        avg_wait_mins: 15,
+        avg_wait_mins: 5,
         outdoor_count: 0,
         indoor_count: 0,
       });
@@ -212,7 +212,7 @@ export default function App() {
           status: payload.status || 'waiting',
           created_at: payload.created_at || new Date().toISOString(),
           branch_id: branchId,
-          estimated_wait_mins: payload.estimated_wait_mins || 15,
+          estimated_wait_mins: payload.estimated_wait_mins || 5,
           notified_at: null,
           seated_at: null,
         };
@@ -221,13 +221,16 @@ export default function App() {
       });
 
       // Update statistics
-      setStats((prev) => ({
-        ...prev,
-        waiting_count: prev.waiting_count + 1,
-        outdoor_count: payload.area_name.includes('Outdoor') ? prev.outdoor_count + 1 : prev.outdoor_count,
-        indoor_count: !payload.area_name.includes('Outdoor') ? prev.indoor_count + 1 : prev.indoor_count,
-      }));
-    };
+        setStats((prev) => ({
+          ...prev,
+          waiting_count: prev.waiting_count + 1,
+          outdoor_count: payload.area_name.includes('Outdoor') ? prev.outdoor_count + 1 : prev.outdoor_count,
+          indoor_count: !payload.area_name.includes('Outdoor') ? prev.indoor_count + 1 : prev.indoor_count,
+        }));
+        
+        // Refresh accurate wait times from server
+        fetchQueue();
+      };
 
     // 2. Listener for `queue:status_changed`
     const handleStatusChanged = (payload: StatusChangedPayload) => {
@@ -339,6 +342,9 @@ export default function App() {
       setNotificationHistory((prev) =>
         prev.map((n) => (n.reservation_id === reservationId ? { ...n, status: newStatus } : n))
       );
+      
+      // Refresh accurate stats
+      fetchQueue();
     } catch (err) {
       console.error('Status change error:', err);
     }
