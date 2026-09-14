@@ -18,18 +18,20 @@ import {
   AlertCircle,
   ChevronRight,
   ExternalLink,
-  History
+  History,
+  UserPlus,
 } from 'lucide-react';
 import { Reservation, QueueStats, NotificationHistoryItem, ReservationStatus } from '../types';
 import { NotificationHistorySection } from './NotificationHistorySection';
 import { GuestHistoryModal } from './GuestHistoryModal';
+import { WalkInModal } from './WalkInModal';
 
 interface StaffDashboardProps {
   queue: Reservation[];
   stats: QueueStats;
   branchId: string;
   onStatusChange: (reservationId: string, newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled') => Promise<void>;
-  onSimulateWalkIn: () => void;
+  onCreateWalkIn: (data: { customer_name: string; mobile: string; party_size: number; area_name: string; notes: string }) => Promise<void>;
   onRefreshQueue: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -49,7 +51,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   stats,
   branchId,
   onStatusChange,
-  onSimulateWalkIn,
+  onCreateWalkIn,
   onRefreshQueue,
   soundEnabled,
   onToggleSound,
@@ -68,6 +70,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
   const [historyModalState, setHistoryModalState] = useState<{isOpen: boolean, mobile: string, name: string}>({isOpen: false, mobile: '', name: ''});
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
 
   // Filtered reservations
   const filteredQueue = queue.filter((res) => {
@@ -218,6 +221,15 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
                 {unreadCount}
               </span>
             )}
+          </button>
+
+          {/* Add Walk-In Button */}
+          <button
+            onClick={() => setIsWalkInModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#D32F2F]/50 bg-[#D32F2F]/10 px-3 py-1.5 text-xs font-medium text-[#D32F2F] hover:bg-[#D32F2F]/20 transition"
+          >
+            <UserPlus className="h-4 w-4" />
+            <span>Add Walk-In</span>
           </button>
         </div>
 
@@ -506,6 +518,15 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
         onClose={() => setHistoryModalState({isOpen: false, mobile: '', name: ''})} 
         mobile={historyModalState.mobile} 
         customerName={historyModalState.name} 
+      />
+
+      <WalkInModal
+        isOpen={isWalkInModalOpen}
+        onClose={() => setIsWalkInModalOpen(false)}
+        onSubmit={async (data) => {
+          await onCreateWalkIn(data);
+          setIsWalkInModalOpen(false);
+        }}
       />
     </div>
   );

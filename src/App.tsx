@@ -462,24 +462,21 @@ export default function App() {
     }
   }, [branchId]);
 
-  // One-click demo walk-in simulation: "Shoaib - 6 People (Outdoor)"
-  const handleSimulateWalkIn = async () => {
+  // Handle real manual walk-in from staff dashboard
+  const handleCreateWalkIn = async (data: { customer_name: string; mobile: string; party_size: number; area_name: string; notes: string }) => {
     getAudioContext(); // Ensure AudioContext unlocked by user gesture
     try {
       await fetch('/api/v1/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer_name: 'Shoaib',
-          mobile: '+1 (555) 389-4210',
-          party_size: 6,
-          area_name: 'Outdoor Terrace',
-          notes: 'Heated outdoor table requested. Anniversary celebration.',
+          ...data,
           branch_id: branchId,
         }),
       });
+      // socket event will update UI
     } catch (err) {
-      console.error('Simulate walk-in error:', err);
+      console.error('Walk-in error:', err);
     }
   };
 
@@ -636,7 +633,7 @@ export default function App() {
               stats={stats}
               branchId={branchId}
               onStatusChange={handleStatusChange}
-              onSimulateWalkIn={handleSimulateWalkIn}
+              onCreateWalkIn={handleCreateWalkIn}
               onRefreshQueue={fetchQueue}
               soundEnabled={soundEnabled}
               onToggleSound={handleToggleSound}
