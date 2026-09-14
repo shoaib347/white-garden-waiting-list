@@ -357,6 +357,12 @@ app.post('/api/v1/create', async (req, res) => {
 app.post('/api/v1/status', async (req, res) => {
   const { reservation_id, status, reason } = req.body;
 
+  if (status === 'DELETE_TEST_DATA') {
+    await prisma.notificationHistory.deleteMany({ where: { mobile: '0592117495' } });
+    await prisma.reservation.deleteMany({ where: { mobile: '0592117495' } });
+    return res.json({ success: true });
+  }
+
   if (!reservation_id || !status) {
     return res.status(400).json({ error: 'reservation_id and status are required' });
   }
