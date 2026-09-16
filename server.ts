@@ -275,41 +275,46 @@ app.get('/api/v1/reservation/:id', async (req, res) => {
 
 // 3. POST /api/v1/create: Submit new reservation from Customer Booking Form
 app.post('/api/v1/create', async (req, res) => {
-  const { customer_name, mobile, party_size, area_name, notes, branch_id = 'branch_1', is_walkin } = req.body;
-
-  if (!customer_name || !mobile) {
-    return res.status(400).json({ error: 'Customer name and mobile number are required.' });
-  }
-
-  // Check if waitlist is open (skip for staff walk-ins)
-  const settings = await prisma.branchSettings.findUnique({ where: { id: branch_id } });
-  if (settings && !settings.is_waitlist_open && !is_walkin) {
-    return res.status(403).json({ error: 'The waitlist is currently closed.' });
-  }
-
-  const parsedParty = parseInt(party_size, 10) || 2;
-  const branchReservations = await prisma.reservation.findMany({ where: { branch_id } });
-  const currentWaiting = branchReservations.filter((r) => r.status === 'waiting' || r.status === 'ready');
-  const queueNumber = branchReservations.length + 1;
+  try {
+    const { customer_name, mobile, party_size, area_name, notes, branch_id = 'branch_1', is_walkin } = req.body;
   
-  const totalCount = await prisma.reservation.count();
-  const newReservationId = `COAL-${104 + totalCount + 1}`;
-  const estimatedWait = Math.max(10, currentWaiting.length * 10 + (parsedParty > 4 ? 10 : 5));
-
-  const newReservation = await prisma.reservation.create({
-    data: {
-      reservation_id: newReservationId,
-      customer_name: customer_name.trim(),
-      mobile: mobile.trim(),
-      party_size: parsedParty,
-      area_name: area_name || 'Main Dining Room',
-      queue_number: queueNumber,
-      status: 'waiting',
-      notes: notes?.trim() || '',
-      branch_id,
-      estimated_wait_mins: estimatedWait,
+    if (!customer_name || !mobile) {
+      return res.status(400).json({ error: 'Customer name and mobile number are required.' });
     }
-  });
+  
+    // Check if waitlist is open (skip for staff walk-ins)
+    const settings = await prisma.branchSettings.findUnique({ where: { id: branch_id } });
+    if (settings && !settings.is_waitlist_open && !is_walkin) {
+      return res.status(403).json({ error: 'The waitlist is currently closed.' });
+    }
+  
+    const parsedParty = parseInt(party_size, 10) || 2;
+    const branchReservations = await prisma.reservation.findMany({ where: { branch_id } });
+    const currentWaiting = branchReservations.filter((r) => r.status === 'waiting' || r.status === 'ready');
+    const queueNumber = branchReservations.length + 1;
+    
+    const estimatedWait = Math.max(10, currentWaiting.length * 10 + (parsedParty > 4 ? 10 : 5));
+  
+    let newReservation = await prisma.reservation.create({
+      data: {
+        reservation_id: `TEMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        customer_name: customer_name.trim(),
+        mobile: mobile.trim(),
+        party_size: parsedParty,
+        area_name: area_name || 'Main Dining Room',
+        queue_number: queueNumber,
+        status: 'waiting',
+        notes: notes?.trim() || '',
+        branch_id,
+        estimated_wait_mins: estimatedWait,
+      }
+    });
+
+    const finalReservationId = `COAL-${104 + newReservation.id}`;
+    newReservation = await prisma.reservation.update({
+      where: { id: newReservation.id },
+      data: { reservation_id: finalReservationId }
+    });
 
   const notifHistoryRecord = await prisma.notificationHistory.create({
     data: {
@@ -346,11 +351,15 @@ app.post('/api/v1/create', async (req, res) => {
 
   const peopleAhead = await getPeopleAhead(newReservation.reservation_id, branch_id);
 
-  res.status(201).json({
-    success: true,
-    reservation: newReservation,
-    people_ahead: peopleAhead,
-  });
+    res.status(201).json({
+      success: true,
+      reservation: newReservation,
+      people_ahead: peopleAhead,
+    });
+  } catch (err: any) {
+    console.error('Error in /api/v1/create:', err);
+    res.status(500).json({ error: err.message || 'Failed to create reservation' });
+  }
 });
 
 // 4. POST /api/v1/status: Staff action - Call Customer ('ready') or Seat Customer ('seated' | 'served')
