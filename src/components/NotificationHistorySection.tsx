@@ -13,6 +13,7 @@ import {
   Check, 
   Flame, 
   Eye, 
+  ShoppingBag,
   Users, 
   MapPin, 
   ExternalLink,
@@ -475,10 +476,17 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                         </span>
                       )}
                       {isSeated && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="h-3 w-3" />
-                          Seated
-                        </span>
+                        isTakeaway ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-0.5 text-xs font-semibold text-sky-400 border border-sky-500/20">
+                            <ShoppingBag className="h-3 w-3" />
+                            Takeaway
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Seated
+                          </span>
+                        )
                       )}
                       {item.status === 'cancelled' && (
                         <div className="flex flex-col items-start gap-1">
