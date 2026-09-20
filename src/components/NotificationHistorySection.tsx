@@ -190,6 +190,19 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
   const totalPages = Math.ceil(filteredHistory.length / rowsPerPage);
   const paginatedHistory = filteredHistory.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  };
+
   return (
     <div id="section-notification-history" className="rounded-xl border border-neutral-800 bg-[#151515] overflow-hidden shadow-xl">
       {/* Header */}
@@ -576,18 +589,27 @@ export const NotificationHistorySection: React.FC<NotificationHistorySectionProp
                     <span className="sr-only">Previous</span>
                     <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-neutral-700 focus:z-20 focus:outline-offset-0 ${
-                        page === currentPage
-                          ? 'z-10 bg-[#D4AF37] text-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]'
-                          : 'text-neutral-300 hover:bg-neutral-800'
-                      }`}
-                    >
-                      {page}
-                    </button>
+                  {getPageNumbers().map((page, index) => (
+                    typeof page === 'string' ? (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-neutral-500 ring-1 ring-inset ring-neutral-700 focus:outline-offset-0"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page as number)}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-neutral-700 focus:z-20 focus:outline-offset-0 ${
+                          page === currentPage
+                            ? 'z-10 bg-[#D4AF37] text-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]'
+                            : 'text-neutral-300 hover:bg-neutral-800'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
                   ))}
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
