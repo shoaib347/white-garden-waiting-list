@@ -1,102 +1,101 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
-  --color-coal-grey: #e4e2df;
-  --color-coal-red: #c02126;
-  --color-coal-black: #000000;
-  
-  --font-title: "title", sans-serif;
-  --font-subtitle: "subtitle", sans-serif;
-  --font-paragraph: "paragraph", sans-serif;
+  --font-serif: "Cormorant Garamond", "IBM Plex Sans Arabic", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", "IBM Plex Sans Arabic", system-ui, -apple-system, sans-serif;
+  --color-forest-950: #081c15;
+  --color-forest-900: #1b4332;
+  --color-forest-700: #2d6a4f;
+  --color-sage-300: #95d5b2;
+  --color-sage-400: #74c69d;
+  --color-sage-100: #d8f3dc;
+  --color-champagne-500: #c5a059;
+  --color-champagne-600: #b08a42;
+  --color-alabaster: #fbfbfb;
+  --color-garden-mist: #f7f9f6;
 }
 
 @layer base {
-  @font-face {
-      font-family: title;
-      src: url('https://coal-sa.com/wp-content/themes/coal/assets/fonts/TragicMarker-Regular.ttf');
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
   }
 
-  @font-face {
-      font-family: subtitle;
-      src: url('https://coal-sa.com/wp-content/themes/coal/assets/fonts/BarlowCondensed-Bold.ttf');
+  html[dir="rtl"] body {
+    font-family: "IBM Plex Sans Arabic", "Plus Jakarta Sans", system-ui, sans-serif;
   }
 
-  @font-face {
-      font-family: paragraph;
-      src: url('https://coal-sa.com/wp-content/themes/coal/assets/fonts/Barlow-Regular.ttf');
+  h1, h2, .font-display {
+    font-family: var(--font-serif);
   }
 
-  body {
-    font-family: var(--font-paragraph);
-    background-color: var(--color-coal-grey) !important;
-    color: var(--color-coal-black) !important;
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] .font-display {
+    font-family: "IBM Plex Sans Arabic", "Cormorant Garamond", serif;
   }
 }
 
-@layer utilities {
-  .coal-border {
-    border: 3px solid #000 !important;
-    border-top-left-radius: 80px 15px !important;
-    border-top-right-radius: 15px 70px !important;
-    border-bottom-right-radius: 100px 15px !important;
-    border-bottom-left-radius: 15px 70px !important;
-    background-color: #fff !important;
-    color: #000 !important;
-  }
-  
-  .coal-btn {
-    border: 2px solid #e4e2df !important;
-    border-top-left-radius: 10px 15px !important;
-    border-top-right-radius: 15px 20px !important;
-    border-bottom-right-radius: 30px 15px !important;
-    border-bottom-left-radius: 15px 10px !important;
-    font-family: var(--font-subtitle) !important;
-    text-transform: capitalize !important;
-    background-color: var(--color-coal-red) !important;
-    color: #fff !important;
-  }
-
-  .coal-title {
-    font-family: var(--font-title) !important;
-    color: var(--color-coal-red) !important;
-  }
-  
-  .coal-subtitle {
-    font-family: var(--font-subtitle) !important;
-  }
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Force dark theme overwrites to match Coal's light rustic theme */
-body {
-  background-color: var(--color-coal-grey) !important;
+.text-balance {
+  text-wrap: balance;
 }
 
-/* Let the dark panels keep their dark background, but add the rustic border */
-.bg-\[\#141414\], .bg-\[\#181818\], .bg-neutral-900, .bg-neutral-800 { 
-  border-color: #000 !important;
-  border-width: 2px !important;
+/* Luxury botanical map aesthetics for Leaflet */
+.wg-leaflet-container {
+  background-color: #eef3ec;
+  font-family: var(--font-sans);
 }
 
-/* Remove the forced black text so that the original silver/white text from Tailwind comes back! */
-.text-\[\#D32F2F\] { color: var(--color-coal-red) !important; }
-.bg-\[\#D32F2F\] { background-color: var(--color-coal-red) !important; }
-.border-\[\#D32F2F\]\/60 { border-color: var(--color-coal-red) !important; }
-
-/* Global overrides for rounded elements to match the hand-drawn border vibe */
-.rounded-xl, .rounded-2xl, .rounded-lg, .rounded-md {
-    border: 2px solid #000 !important;
-    border-top-left-radius: 20px 5px !important;
-    border-top-right-radius: 5px 20px !important;
-    border-bottom-right-radius: 20px 5px !important;
-    border-bottom-left-radius: 5px 20px !important;
+.wg-leaflet-container .leaflet-tile-pane {
+  filter: grayscale(48%) sepia(14%) hue-rotate(64deg) saturate(78%) brightness(1.04) contrast(0.92);
 }
 
-button {
-    font-family: var(--font-subtitle) !important;
-    text-transform: uppercase;
+.wg-leaflet-container .leaflet-control-zoom {
+  border: 1px solid rgba(27, 67, 50, 0.18) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(8, 28, 21, 0.08) !important;
 }
 
-h1, h2, h3 {
-    font-family: var(--font-title) !important;
-    color: var(--color-coal-red) !important;
+.wg-leaflet-container .leaflet-control-zoom a {
+  background-color: rgba(251, 251, 251, 0.96) !important;
+  color: #1b4332 !important;
+  border-bottom: 1px solid rgba(27, 67, 50, 0.1) !important;
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+}
+
+.wg-leaflet-container .leaflet-control-zoom a:hover {
+  background-color: #d8f3dc !important;
+  color: #081c15 !important;
+}
+
+.wg-leaflet-container .leaflet-popup-content-wrapper {
+  background-color: #ffffff;
+  color: #081c15;
+  border-radius: 16px;
+  border: 1px solid rgba(27, 67, 50, 0.16);
+  box-shadow: 0 12px 30px rgba(8, 28, 21, 0.14);
+  padding: 2px;
+}
+
+.wg-leaflet-container .leaflet-popup-tip {
+  background-color: #ffffff;
+  border: 1px solid rgba(27, 67, 50, 0.12);
+}
+
+.wg-leaflet-container .leaflet-popup-close-button {
+  color: #1b4332 !important;
+  padding: 6px 8px 0 0 !important;
+}
+
+.wg-marker-icon {
+  background: transparent;
+  border: none;
 }

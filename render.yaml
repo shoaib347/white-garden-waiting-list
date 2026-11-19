@@ -1,20 +1,20 @@
 services:
   # 1. The Node.js Web Service (Backend + Frontend)
   - type: web
-    name: coal-restaurant-waitlist
+    name: white-garden-waitlist
     env: node
     # Render supports WebSockets automatically
-    buildCommand: bun install && bun run build
-    startCommand: bun run start
+    buildCommand: npm install && npx prisma db push && npm run build
+    startCommand: npm run start
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: coal-postgres
+          name: white-garden-postgres
           property: connectionString
       - key: NODE_ENV
         value: production
 
   # 2. The PostgreSQL Database
   - type: psql
-    name: coal-postgres
+    name: white-garden-postgres
     plan: free # Free tier database

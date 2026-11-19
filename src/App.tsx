@@ -1,710 +1,649 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Flame, 
-  Bell, 
-  Users, 
-  Ticket, 
-  Columns, 
-  Volume2, 
-  VolumeX, 
-  Sparkles, 
-  ExternalLink, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Wifi, 
-  WifiOff 
-} from 'lucide-react';
+/**
+ * White Garden — Curating Moments (وايت قاردن)
+ * Real-time Multi-Branch Waiting List & Concierge Platform
+ */
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Header } from './components/Header';
+import { HostessDashboardView } from './components/HostessDashboardView';
+import { LocationsMapView } from './components/LocationsMapView';
+import { TicketTrackerView } from './components/TicketTrackerView';
+import { WaitlistJoinView } from './components/WaitlistJoinView';
+import {
+  COPY,
+  INITIAL_BRANCHES,
+  createInitialWaitlistEntries,
+  type ActiveView,
+  type Language,
+} from './data/whiteGardenData';
+import { playHospitalityChime } from './utils/soundChime';
+import {
+  generateTicketCode,
+  normalizeTicketSlug,
+  transitionTicket,
+  type BranchId,
+  type BranchInfo,
+  type SeatingAreaId,
+  type SpecialRequestId,
+  type TicketAction,
+  type WaitlistEntry,
+} from './utils/waitlistLogic';
 import { useSocket } from './hooks/useSocket';
-import { StaffDashboard } from './components/StaffDashboard';
-import { CustomerBookingForm } from './components/CustomerBookingForm';
-import { CustomerTicketTracker } from './components/CustomerTicketTracker';
-import { RealtimeNotificationBanner } from './components/RealtimeNotificationBanner';
-import { NotificationDrawer } from './components/NotificationDrawer';
-import { LoginScreen } from './components/LoginScreen';
-import { Reservation, QueueStats, NewEntryPayload, StatusChangedPayload, NotificationItem, NotificationHistoryItem } from './types';
-import { playNotificationChime, getAudioContext } from './audioUtils';
-import { Languages } from 'lucide-react';
-import { Language } from './i18n';
 
-import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
+interface ToastNotification {
+  id: string;
+  message: string;
+  kind: 'info' | 'chime';
+}
 
-type ActiveView = 'staff' | 'booking' | 'ticket';
+function parseRouteFromPath(entries: WaitlistEntry[]): {
+  view: ActiveView;
+  ticketId?: string;
+} {
+  if (typeof window === 'undefined') {
+    return { view: 'join' };
+  }
+  const path = decodeURIComponent(window.location.pathname).toLowerCase();
+  if (
+    path.startsWith('/hostess') ||
+    path.startsWith('/desk') ||
+    path.includes('staff dashboard') ||
+    path.includes('staff')
+  ) {
+    return { view: 'hostess' };
+  }
+  if (path.startsWith('/map') || path.startsWith('/locations')) {
+    return { view: 'map' };
+  }
+  if (path.startsWith('/ticket/') || path.includes('live tracker')) {
+    const rawSlug = path.includes('/ticket/')
+      ? path.slice(path.indexOf('/ticket/') + '/ticket/'.length)
+      : path.split('/').pop() || '';
+    const slug = normalizeTicketSlug(rawSlug);
+    const matched = entries.find(
+      (e) => normalizeTicketSlug(e.ticketCode) === slug || e.id.toLowerCase() === slug,
+    );
+    return { view: 'ticket', ticketId: matched?.id };
+  }
+  if (path === '/ticket' || path.includes('live tracker')) {
+    return { view: 'ticket' };
+  }
+  if (
+    path.startsWith('/join') ||
+    path.includes('waitlist form') ||
+    path.includes('booking')
+  ) {
+    return { view: 'join' };
+  }
+  return { view: 'join' };
+}
+
+// Convert backend API reservation to WaitlistEntry
+function mapBackendReservationToEntry(r: any): WaitlistEntry {
+  const code = r.reservation_id.startsWith('#') ? r.reservation_id : `#${r.reservation_id}`;
+  const now = Date.now();
+  const createdMs = r.created_at ? new Date(r.created_at).getTime() : now;
+  const calledMs = r.notified_at ? new Date(r.notified_at).getTime() : undefined;
+  const seatedMs = r.seated_at ? new Date(r.seated_at).getTime() : undefined;
+
+  let uiStatus: WaitlistEntry['status'] = 'waiting';
+  if (r.status === 'ready' || r.status === 'called') uiStatus = 'called';
+  else if (r.status === 'seated' || r.status === 'served') uiStatus = 'seated';
+  else if (r.status === 'cancelled') uiStatus = 'cancelled';
+  else if (r.status === 'no_show') uiStatus = 'no_show';
+
+  return {
+    id: r.reservation_id,
+    ticketCode: code,
+    branchId: (r.branch_id || 'roshn') as BranchId,
+    guestName: r.customer_name || 'Valued Guest',
+    phone: r.mobile || '',
+    partySize: r.party_size || 2,
+    seatingArea: (r.area_name || 'terrace') as SeatingAreaId,
+    specialRequests: [],
+    notes: r.notes || undefined,
+    status: uiStatus,
+    source: (r.notes && r.notes.includes('[WALKIN]')) ? 'walkin' : 'guest',
+    createdAt: createdMs,
+    calledAt: calledMs,
+    seatedAt: seatedMs,
+    holdExpiresAt: calledMs ? calledMs + 5 * 60 * 1000 : undefined,
+    events: [
+      {
+        id: `evt-${r.reservation_id}`,
+        timestamp: createdMs,
+        messageEn: `Waitlist entry registered (${code}).`,
+        messageAr: `تم تسجيل التذكرة (${code}).`,
+      },
+    ],
+  };
+}
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlLang = params.get('lang');
-    return (urlLang === 'ar' || urlLang === 'en') ? urlLang : 'en';
-  });
-  useEffect(() => {
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
-  }, [language]);
-    
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const currentPath = decodeURIComponent(location.pathname.replace(/^\/+/, ''));
-  let currentView: ActiveView = 'staff';
-  if (currentPath === 'Guest Waitlist Form') currentView = 'booking';
-  else if (currentPath === 'Guest Live Tracker') currentView = 'ticket';
-  else if (currentPath === 'Staff Dashboard') currentView = 'staff';
-
-  const setCurrentView = (view: ActiveView) => {
-    if (view === 'staff') navigate('/Staff Dashboard');
-    if (view === 'booking') navigate('/Guest Waitlist Form');
-    if (view === 'ticket') navigate('/Guest Live Tracker');
-  };
-  const [branchId, setBranchId] = useState('branch_1');
-  const [queue, setQueue] = useState<Reservation[]>([]);
-  const [stats, setStats] = useState<QueueStats>({
-    waiting_count: 0,
-    calling_count: 0,
-    served_count: 0,
-    avg_wait_mins: 5,
-    outdoor_count: 0,
-    indoor_count: 0,
-  });
-
-  const [staffToken, setStaffToken] = useState<string | null>(localStorage.getItem('staffToken'));
-
-  // Track active customer reservation for ticket view
-  const [activeReservationId, setActiveReservationId] = useState<string>('COAL-101');
-
-  // Real-time notification banner & drawer state
-  const [latestBannerEntry, setLatestBannerEntry] = useState<NewEntryPayload | null>(null);
-  const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryItem[]>([]);
-
-  // Derive notifications for the drawer from persistent notification history
-  const notifications: NotificationItem[] = notificationHistory.map(item => ({
-    id: item.id,
-    type: item.status === 'waiting' ? 'new_reservation' : 'status_ready',
-    title: item.status === 'waiting' ? 'New Party Registered' : `Status Update: ${item.status}`,
-    message: `${item.customer_name} — ${item.party_size} People (${item.area_name})`,
-    timestamp: item.notification_created_at,
-    read: item.read,
-    data: {
-      reservation_id: item.reservation_id,
-      customer_name: item.customer_name,
-      mobile: item.mobile,
-      party_size: item.party_size,
-      area_name: item.area_name,
-      queue_number: item.queue_number,
-      created_at: item.reservation_created_at,
-      status: item.status,
+  const [lang, setLang] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const urlL = p.get('lang');
+      if (urlL === 'ar' || urlL === 'en') return urlL;
     }
-  }));
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(true);
+    return 'en';
+  });
 
-  // WebSocket Connection
+  const [branches, setBranches] = useState<BranchInfo[]>(INITIAL_BRANCHES);
+  const [entries, setEntries] = useState<WaitlistEntry[]>(() => createInitialWaitlistEntries());
+  const [selectedBranch, setSelectedBranch] = useState<BranchId | 'all'>('roshn');
+  const [activeTicketId, setActiveTicketId] = useState<string>('wg-roshn-104');
+  const [activeView, setActiveView] = useState<ActiveView>(() => {
+    const initialEntries = createInitialWaitlistEntries();
+    return parseRouteFromPath(initialEntries).view;
+  });
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [sequenceCounter, setSequenceCounter] = useState(108);
+  const [toast, setToast] = useState<ToastNotification | null>(null);
+
   const { socket, isConnected } = useSocket();
+  const t = COPY[lang];
 
-  // Load initial settings
-  const fetchSettings = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/settings?branch_id=${branchId}`);
-      if (!res.ok) throw new Error('Failed to fetch settings');
-      const data = await res.json();
-      setIsWaitlistOpen(data.is_waitlist_open);
-    } catch (err) {
-      console.error('Error fetching settings:', err);
-    }
-  }, [branchId]);
-
-  // Load initial queue data
-  const fetchQueue = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/queue?branch_id=${branchId}`);
-      if (!res.ok) throw new Error('Failed to fetch queue');
-      const data = await res.json();
-      setQueue(data.queue || []);
-      setStats(data.stats || {
-        waiting_count: 0,
-        calling_count: 0,
-        served_count: 0,
-        avg_wait_mins: 5,
-        outdoor_count: 0,
-        indoor_count: 0,
-      });
-    } catch (err) {
-      console.error('Error fetching queue:', err);
-    }
-  }, [branchId]);
-
-  // Load persistent notification history
-  const fetchNotificationHistory = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/notifications/history?branch_id=${branchId}`);
-      if (!res.ok) throw new Error('Failed to fetch notification history');
-      const data = await res.json();
-      setNotificationHistory(data.history || []);
-    } catch (err) {
-      console.error('Error fetching notification history:', err);
-    }
-  }, [branchId]);
-
+  // Dynamic RTL / LTR sync
   useEffect(() => {
-    fetchSettings();
-    if (currentView === 'staff') {
-      fetchQueue();
-      fetchNotificationHistory();
-    }
-  }, [currentView, fetchSettings, fetchQueue, fetchNotificationHistory]);
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+  }, [lang]);
 
-  // Handle URL hash routing (e.g. #ticket=COAL-101)
-  useEffect(() => {
-    const checkHash = () => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#ticket=')) {
-        const id = hash.replace('#ticket=', '');
-        if (id) {
-          setActiveReservationId(id);
-          setCurrentView('ticket');
-        }
-      }
-    };
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+  // Toast notification helper
+  const showToast = useCallback((message: string, kind: 'info' | 'chime' = 'info') => {
+    const id = `toast-${Date.now()}`;
+    setToast({ id, message, kind });
+    window.setTimeout(() => {
+      setToast((current) => (current?.id === id ? null : current));
+    }, 4500);
   }, []);
 
-  // WebSocket real-time subscription for staff room
+  // Sync browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseRouteFromPath(entries);
+      setActiveView(parsed.view);
+      if (parsed.ticketId) {
+        setActiveTicketId(parsed.ticketId);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [entries]);
+
+  // Fetch real queue from backend
+  const fetchQueueFromBackend = useCallback(async (branch: BranchId | 'all') => {
+    try {
+      const res = await fetch(`/api/v1/queue?branch_id=${branch}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.queue) && data.queue.length > 0) {
+        const backendEntries = data.queue.map(mapBackendReservationToEntry);
+        setEntries((prev) => {
+          // Merge backend entries, keeping any fresh local events
+          const map = new Map<string, WaitlistEntry>();
+          prev.forEach((e) => map.set(e.ticketCode.toLowerCase(), e));
+          backendEntries.forEach((b: WaitlistEntry) => map.set(b.ticketCode.toLowerCase(), b));
+          return Array.from(map.values()).sort((a, b) => b.createdAt - a.createdAt);
+        });
+      }
+    } catch (err) {
+      // Offline fallback: keep in-memory mock data
+    }
+  }, []);
+
+  // On mount and branch switch: join socket room & sync queue
+  useEffect(() => {
+    fetchQueueFromBackend(selectedBranch);
+
+    if (socket && isConnected) {
+      socket.emit('join:staff', { branch_id: selectedBranch });
+    }
+  }, [selectedBranch, socket, isConnected, fetchQueueFromBackend]);
+
+  // Listen to real-time Socket.IO events
   useEffect(() => {
     if (!socket) return;
 
-    // Join staff branch room on connect/reconnect
-    const onConnect = () => {
-      socket.emit('join:staff', { branch_id: branchId });
-    };
-    if (socket.connected) {
-      onConnect();
-    }
-    socket.on('connect', onConnect);
-
-    // 1. WEBSOCKET REAL-TIME ENGINE: Live Listener for `queue:new_entry`
-    const handleNewEntry = (payload: NewEntryPayload) => {
-      // Audio Alert: Play chime sound using Web Audio API
-      if (soundEnabled) {
-        playNotificationChime({ volume: 0.75, type: 'new_entry' });
-      }
-
-      // Visual Flash / Banner: Display animated banner at top
-      setLatestBannerEntry(payload);
-
-      // Toast Counter & Notification Drawer: Increase unread badge
-
-
-      // Dynamic Queue Update: Prepend new customer without page refresh (idempotent check)
-      setQueue((prevQueue) => {
-        const exists = prevQueue.some((r) => r.reservation_id === payload.reservation_id);
-        if (exists) return prevQueue;
-
-        const newReservation: Reservation = {
-          reservation_id: payload.reservation_id,
-          customer_name: payload.customer_name,
-          mobile: payload.mobile,
-          party_size: payload.party_size,
-          area_name: payload.area_name,
-          queue_number: payload.queue_number,
-          status: payload.status || 'waiting',
-          created_at: payload.created_at || new Date().toISOString(),
-          branch_id: branchId,
-          estimated_wait_mins: payload.estimated_wait_mins || 5,
-          notes: payload.notes,
-          past_visits_count: payload.past_visits_count || 0,
-          notified_at: null,
-          seated_at: null,
-        };
-
-        return [newReservation, ...prevQueue];
+    // New party joined
+    const handleNewEntry = (payload: any) => {
+      const newEntry = mapBackendReservationToEntry({
+        reservation_id: payload.reservation_id,
+        customer_name: payload.customer_name,
+        mobile: payload.mobile,
+        party_size: payload.party_size,
+        area_name: payload.area_name,
+        created_at: payload.created_at,
+        notes: payload.notes,
+        branch_id: payload.branch_id || selectedBranch,
+        status: payload.status,
       });
 
-      // Update statistics
-        setStats((prev) => ({
-          ...prev,
-          waiting_count: prev.waiting_count + 1,
-          outdoor_count: payload.area_name.includes('Outdoor') ? prev.outdoor_count + 1 : prev.outdoor_count,
-          indoor_count: !payload.area_name.includes('Outdoor') ? prev.indoor_count + 1 : prev.indoor_count,
-        }));
-        
-        // Refresh accurate wait times from server
-        fetchQueue();
-      };
-
-    // 2. Listener for `queue:status_changed`
-    const handleStatusChanged = (payload: StatusChangedPayload) => {
-      setQueue((prevQueue) =>
-        prevQueue.map((item) => {
-          if (item.reservation_id === payload.reservation_id) {
-            return {
-              ...item,
-              status: payload.status,
-              notified_at: payload.status === 'ready' ? payload.updated_at : item.notified_at,
-              seated_at: payload.status === 'seated' || payload.status === 'served' ? payload.updated_at : item.seated_at,
-            };
-          }
-          return item;
-        })
-      );
-
-      setNotificationHistory((prev) =>
-        prev.map((item) => {
-          if (item.reservation_id === payload.reservation_id) {
-            return {
-              ...item,
-              status: payload.status,
-            };
-          }
-          return item;
-        })
-      );
-
-      // Re-calculate stats from fresh queue data
-      fetchQueue();
-    };
-
-    // 3. Listener for notification events
-    const handleNotificationNew = (record: NotificationHistoryItem) => {
-      setNotificationHistory((prev) => {
-        const exists = prev.some((n) => n.id === record.id || n.reservation_id === record.reservation_id);
-        if (exists) {
-          return prev.map((n) => (n.id === record.id || n.reservation_id === record.reservation_id ? record : n));
+      setEntries((prev) => {
+        if (prev.some((e) => e.ticketCode.toLowerCase() === newEntry.ticketCode.toLowerCase())) {
+          return prev;
         }
-        return [record, ...prev];
+        return [newEntry, ...prev];
       });
-    };
 
-    const handleNotificationUpdated = (updatedRecord: NotificationHistoryItem) => {
-      setNotificationHistory((prev) =>
-        prev.map((n) => (n.id === updatedRecord.id || n.reservation_id === updatedRecord.reservation_id ? updatedRecord : n))
+      if (audioEnabled) {
+        playHospitalityChime();
+      }
+
+      showToast(
+        lang === 'ar'
+          ? `ضيف جديد في الانتظار: ${newEntry.guestName} (${newEntry.ticketCode})`
+          : `New waiting guest: ${newEntry.guestName} (${newEntry.ticketCode})`,
+        'chime',
       );
     };
 
-    const handleNotificationHistorySynced = (data: { history: NotificationHistoryItem[] }) => {
-      if (data?.history) {
-        setNotificationHistory(data.history);
+    // Status changed (Called / Seated / Cancelled)
+    const handleStatusChanged = (payload: any) => {
+      const code = payload.ticket_code || (payload.reservation_id?.startsWith('#') ? payload.reservation_id : `#${payload.reservation_id}`);
+      const rawStatus = payload.action_status || (payload.status === 'ready' ? 'called' : payload.status);
+
+      setEntries((prev) =>
+        prev.map((e) => {
+          if (
+            e.ticketCode.toLowerCase() === code.toLowerCase() ||
+            e.id === payload.reservation_id
+          ) {
+            const nextStatus = rawStatus;
+            return {
+              ...e,
+              status: nextStatus,
+              calledAt: payload.notified_at ? new Date(payload.notified_at).getTime() : e.calledAt,
+              seatedAt: payload.seated_at ? new Date(payload.seated_at).getTime() : e.seatedAt,
+              holdExpiresAt: payload.notified_at ? new Date(payload.notified_at).getTime() + 5 * 60 * 1000 : e.holdExpiresAt,
+            };
+          }
+          return e;
+        })
+      );
+
+      if (rawStatus === 'called' && audioEnabled) {
+        playHospitalityChime();
       }
-    };
-
-    const handleQueueReset = () => {
-      fetchQueue();
-      fetchNotificationHistory();
-    };
-
-    const handleSettingsUpdated = (data: { is_waitlist_open: boolean }) => {
-      setIsWaitlistOpen(data.is_waitlist_open);
     };
 
     socket.on('queue:new_entry', handleNewEntry);
     socket.on('queue:status_changed', handleStatusChanged);
-    socket.on('notification:new', handleNotificationNew);
-    socket.on('notification:updated', handleNotificationUpdated);
-    socket.on('notification:history_synced', handleNotificationHistorySynced);
-    socket.on('queue:reset', handleQueueReset);
-    socket.on('settings:updated', handleSettingsUpdated);
 
     return () => {
-      socket.off('connect', onConnect);
       socket.off('queue:new_entry', handleNewEntry);
       socket.off('queue:status_changed', handleStatusChanged);
-      socket.off('notification:new', handleNotificationNew);
-      socket.off('notification:updated', handleNotificationUpdated);
-      socket.off('notification:history_synced', handleNotificationHistorySynced);
-      socket.off('queue:reset', handleQueueReset);
-      socket.off('settings:updated', handleSettingsUpdated);
     };
-  }, [socket, branchId, soundEnabled, fetchQueue, fetchNotificationHistory]);
+  }, [socket, audioEnabled, lang, selectedBranch, showToast]);
 
-  // Handle staff action (call / seat / cancel)
-  const handleStatusChange = useCallback(async (
-    reservationId: string,
-    newStatus: 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled',
-    reason?: string
+  const navigateToView = (
+    view: ActiveView,
+    ticketIdOverride?: string,
+    ticketCodeOverride?: string,
   ) => {
+    setActiveView(view);
+    if (view !== 'hostess' && selectedBranch === 'all') {
+      setSelectedBranch('roshn');
+    }
+
+    const targetId = ticketIdOverride ?? activeTicketId;
+    if (ticketIdOverride) {
+      setActiveTicketId(ticketIdOverride);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+      let nextPath = '/join';
+      if (view === 'hostess') {
+        nextPath = '/hostess';
+      } else if (view === 'map') {
+        nextPath = '/map';
+      } else if (view === 'ticket') {
+        const ticket = entries.find((e) => e.id === targetId || e.ticketCode === targetId);
+        const rawCode = ticketCodeOverride ?? ticket?.ticketCode ?? 'WG-ROSHN-104';
+        const slug = normalizeTicketSlug(rawCode);
+        nextPath = `/ticket/${slug}`;
+      }
+      if (window.location.pathname !== nextPath) {
+        window.history.pushState({}, '', nextPath);
+      }
+    }
+  };
+
+  // Submit new customer waitlist booking
+  const handleJoinWaitlist = async (input: {
+    branchId: BranchId;
+    guestName: string;
+    phone: string;
+    partySize: number;
+    seatingArea: SeatingAreaId;
+    specialRequests: SpecialRequestId[];
+    notes: string;
+  }) => {
+    const branch = branches.find((b) => b.id === input.branchId) ?? branches[1];
+    const nextSeq = sequenceCounter;
+    setSequenceCounter((prev) => prev + 1);
+
+    const ticketCode = generateTicketCode(branch.code, nextSeq);
+    const now = Date.now();
+    const newId = `${branch.id}-${nextSeq}-${now}`;
+
+    // Optimistic UI update
+    const newEntry: WaitlistEntry = {
+      id: newId,
+      ticketCode,
+      branchId: input.branchId,
+      guestName: input.guestName,
+      phone: input.phone,
+      partySize: input.partySize,
+      seatingArea: input.seatingArea,
+      specialRequests: input.specialRequests,
+      notes: input.notes || undefined,
+      status: 'waiting',
+      source: 'guest',
+      createdAt: now,
+      events: [
+        {
+          id: `evt-${now}-join`,
+          timestamp: now,
+          messageEn: `Joined ${branch.nameEn} waitlist (${ticketCode}).`,
+          messageAr: `تم الانضمام لقائمة الانتظار في ${branch.nameAr} (${ticketCode}).`,
+        },
+      ],
+    };
+
+    setEntries((prev) => [newEntry, ...prev]);
+    setSelectedBranch(input.branchId);
+    setActiveTicketId(newId);
+    navigateToView('ticket', newId, ticketCode);
+
+    showToast(
+      lang === 'ar'
+        ? `تم تأكيد تذكرتك ${ticketCode} في ${branch.nameAr}`
+        : `Pass ${ticketCode} confirmed for ${branch.nameEn}`,
+      'info',
+    );
+
+    // Persist to PostgreSQL backend
     try {
-      const res = await fetch('/api/v1/status', {
+      const res = await fetch('/api/v1/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reservation_id: reservationId,
-          status: newStatus,
-          reason,
+          customer_name: input.guestName,
+          mobile: input.phone,
+          party_size: input.partySize,
+          area_name: input.seatingArea,
+          notes: input.notes + (input.specialRequests.length ? ` | Requests: ${input.specialRequests.join(', ')}` : ''),
+          branch_id: input.branchId,
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to update status');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.reservation?.reservation_id) {
+          const confirmedCode = data.reservation.reservation_id.startsWith('#')
+            ? data.reservation.reservation_id
+            : `#${data.reservation.reservation_id}`;
 
-      // Optimistic update
-      setQueue((prev) =>
-        prev.map((r) => (r.reservation_id === reservationId ? { ...r, status: newStatus } : r))
-      );
-      setNotificationHistory((prev) =>
-        prev.map((n) => (n.reservation_id === reservationId ? { ...n, status: newStatus } : n))
-      );
-      
-      // Refresh accurate stats
-      fetchQueue();
-    } catch (err) {
-      console.error('Status change error:', err);
-    }
-  }, []);
-
-  // 'Mark as Seated' action from the notification banner:
-  // Triggers Socket.IO event queue:status_changed with reservation ID and status 'seated'
-  // Updates customer status to 'seated' in the database and updates the live queue display
-  const handleMarkAsSeated = useCallback(async (reservationId: string) => {
-    // 1. Trigger Socket.IO event queue:status_changed
-    if (socket) {
-      socket.emit('queue:status_changed', {
-        reservation_id: reservationId,
-        status: 'seated',
-      });
-    }
-
-    // 2. Persist to database via API
-    await handleStatusChange(reservationId, 'seated');
-
-    // 3. Mark notification as read / viewed in history
-    const now = new Date().toISOString();
-    setNotificationHistory((prev) =>
-      prev.map((n) =>
-        n.reservation_id === reservationId
-          ? { ...n, status: 'seated', read: true, viewed_at: n.viewed_at || now }
-          : n
-      )
-    );
-
-    // 4. Dismiss banner
-    setLatestBannerEntry(null);
-  }, [socket, handleStatusChange]);
-
-  // 'Dismiss' action: sets dismissed_at timestamp and hides banner / marks item in history
-  const handleDismissNotification = useCallback(async (idOrResId?: string) => {
-    if (!idOrResId) {
-      setLatestBannerEntry(null);
-      return;
-    }
-
-    const now = new Date().toISOString();
-    setNotificationHistory((prev) =>
-      prev.map((n) => {
-        if (n.id === idOrResId || n.reservation_id === idOrResId) {
-          return { ...n, dismissed_at: now, read: true, viewed_at: n.viewed_at || now };
+          setEntries((prev) =>
+            prev.map((e) => (e.id === newId ? { ...e, ticketCode: confirmedCode } : e))
+          );
         }
-        return n;
-      })
+      }
+    } catch (e) {
+      // Handled gracefully in offline mode
+    }
+  };
+
+  // Hostess adds quick walk-in guest
+  const handleAddWalkin = async (input: {
+    branchId: BranchId;
+    guestName: string;
+    phone: string;
+    partySize: number;
+    seatingArea: SeatingAreaId;
+  }) => {
+    const branch = branches.find((b) => b.id === input.branchId) ?? branches[1];
+    const nextSeq = sequenceCounter;
+    setSequenceCounter((prev) => prev + 1);
+
+    const ticketCode = generateTicketCode(branch.code, nextSeq);
+    const now = Date.now();
+    const newId = `${branch.id}-${nextSeq}-${now}`;
+
+    const newEntry: WaitlistEntry = {
+      id: newId,
+      ticketCode,
+      branchId: input.branchId,
+      guestName: input.guestName,
+      phone: input.phone,
+      partySize: input.partySize,
+      seatingArea: input.seatingArea,
+      specialRequests: [],
+      status: 'waiting',
+      source: 'walkin',
+      createdAt: now,
+      events: [
+        {
+          id: `evt-${now}-walkin`,
+          timestamp: now,
+          messageEn: `Added as walk-in party at ${branch.nameEn}.`,
+          messageAr: `تمت إضافة الزائر المباشر في ${branch.nameAr}.`,
+        },
+      ],
+    };
+
+    setEntries((prev) => [newEntry, ...prev]);
+
+    showToast(
+      lang === 'ar'
+        ? `تمت إضافة ${input.guestName} (${ticketCode}) إلى قائمة الانتظار`
+        : `${input.guestName} (${ticketCode}) added to waiting queue`,
+      'info',
     );
 
-    setLatestBannerEntry((current) =>
-      current?.reservation_id === idOrResId ? null : current
-    );
-
-    if (socket) {
-      socket.emit('notification:dismiss', { reservation_id: idOrResId, id: idOrResId });
-    }
-
-    try {
-      await fetch('/api/v1/notifications/dismiss', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reservation_id: idOrResId, id: idOrResId }),
-      });
-    } catch (err) {
-      console.error('Error dismissing notification:', err);
-    }
-  }, [socket]);
-
-  // 'Mark as Read' action: sets viewed_at timestamp and marks item in history
-  const handleMarkReadNotification = useCallback(async (idOrResId: string) => {
-    const now = new Date().toISOString();
-    setNotificationHistory((prev) =>
-      prev.map((n) => {
-        if (n.id === idOrResId || n.reservation_id === idOrResId) {
-          return { ...n, viewed_at: now, read: true };
-        }
-        return n;
-      })
-    );
-
-
-
-    if (socket) {
-      socket.emit('notification:mark_read', { reservation_id: idOrResId, id: idOrResId });
-    }
-
-    try {
-      await fetch('/api/v1/notifications/mark-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reservation_id: idOrResId, id: idOrResId }),
-      });
-    } catch (err) {
-      console.error('Error marking notification read:', err);
-    }
-  }, [socket]);
-
-  const handleMarkAllHistoryRead = useCallback(async () => {
-    const now = new Date().toISOString();
-    setNotificationHistory((prev) =>
-      prev.map((n) => ({ ...n, read: true, viewed_at: n.viewed_at || now }))
-    );
-
-
-    try {
-      await fetch('/api/v1/notifications/mark-all-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ branch_id: branchId }),
-      });
-    } catch (err) {
-      console.error('Error marking all notifications read:', err);
-    }
-  }, [branchId]);
-
-  // Handle real manual walk-in from staff dashboard
-  const handleCreateWalkIn = async (data: { customer_name: string; mobile: string; party_size: number; area_name: string; notes: string }) => {
-    getAudioContext(); // Ensure AudioContext unlocked by user gesture
+    // Persist walk-in to backend
     try {
       await fetch('/api/v1/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...data,
-          branch_id: branchId,
+          customer_name: input.guestName,
+          mobile: input.phone,
+          party_size: input.partySize,
+          area_name: input.seatingArea,
+          notes: '[WALKIN]',
+          branch_id: input.branchId,
           is_walkin: true,
         }),
       });
-      // socket event will update UI
-    } catch (err) {
-      console.error('Walk-in error:', err);
+    } catch (e) {
+      // Handled gracefully
     }
   };
 
-  // Test Chime Function
-  const handleTestChime = () => {
-    getAudioContext();
-    playNotificationChime({ volume: 0.8, type: 'new_entry' });
-  };
+  // Hostess actions: Call, Seat, Delay, Cancel
+  const handleTicketAction = async (
+    ticketId: string,
+    action: TicketAction,
+    tableNumber?: string,
+  ) => {
+    const target = entries.find((e) => e.id === ticketId || e.ticketCode === ticketId);
+    setEntries((prev) => transitionTicket(prev, ticketId, action, { tableNumber }));
 
-  const handleToggleSound = async () => {
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      await Notification.requestPermission();
+    if (!target) return;
+
+    if (action === 'call') {
+      if (audioEnabled) playHospitalityChime();
+      showToast(
+        lang === 'ar'
+          ? `تم نداء ${target.guestName} (${target.ticketCode}) وإرسال تنبيه واتساب/SMS`
+          : `Calling ${target.guestName} (${target.ticketCode}) — SMS & WhatsApp alert sent`,
+        'chime',
+      );
+    } else if (action === 'seat') {
+      showToast(
+        lang === 'ar'
+          ? `تم إجلاس ${target.guestName} على طاولة ${tableNumber || 'G-10'}`
+          : `${target.guestName} seated at table ${tableNumber || 'G-10'}`,
+        'info',
+      );
+    } else if (action === 'extend_5m') {
+      showToast(
+        lang === 'ar'
+          ? 'تم تمديد المهلة ٥ دقائق إضافية وإبلاغ الاستقبال'
+          : 'Added 5 additional minutes to your hold window',
+        'info',
+      );
+    } else if (action === 'notify_hostess') {
+      if (audioEnabled) playHospitalityChime();
+      showToast(
+        lang === 'ar'
+          ? 'تم تنبيه مكتب الاستقبال بأنك في الطريق للمدخل'
+          : 'Front desk notified that you are approaching the entrance',
+        'chime',
+      );
+    } else if (action === 'cancel') {
+      showToast(
+        lang === 'ar'
+          ? `تم إلغاء التذكرة ${target.ticketCode}`
+          : `Reservation ${target.ticketCode} cancelled`,
+        'info',
+      );
     }
-    getAudioContext();
-    setSoundEnabled((prev) => !prev);
+
+    // Broadcast status change to backend and other devices
+    try {
+      const serverStatus = action === 'call' ? 'ready' : (action === 'seat' ? 'seated' : action);
+      await fetch('/api/v1/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reservation_id: target.ticketCode.replace(/^#/, ''),
+          status: serverStatus,
+          reason: action === 'seat' ? `Table ${tableNumber || 'G-10'}` : undefined,
+        }),
+      });
+    } catch (e) {
+      // Offline fallback
+    }
   };
 
-  // Unread badge count
-  const unreadCount = notificationHistory.filter((n) => !n.read).length;
+  const handleToggleBranchOpen = async (branchId: BranchId) => {
+    const targetBranch = branches.find((b) => b.id === branchId);
+    const newIsOpen = !targetBranch?.isOpen;
 
-  const handleSelectReservationForTracker = (id: string) => {
-    setActiveReservationId(id);
-    setCurrentView('ticket');
+    setBranches((prev) =>
+      prev.map((b) => (b.id === branchId ? { ...b, isOpen: newIsOpen } : b)),
+    );
+
+    try {
+      await fetch('/api/v1/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branch_id: branchId,
+          is_waitlist_open: newIsOpen,
+        }),
+      });
+    } catch (e) {
+      // Handled
+    }
   };
 
-  if (location.pathname === '/' || location.pathname === '') {
-    return <Navigate to="/Staff Dashboard" replace />;
-  }
+  const joinBranchId: BranchId =
+    selectedBranch === 'all' ? 'roshn' : selectedBranch;
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white flex flex-col selection:bg-[#D32F2F] selection:text-white font-sans">
-      {/* Visual Flash / Banner at top of dashboard */}
-      {(currentView === 'staff') && (
-        <RealtimeNotificationBanner
-          entry={latestBannerEntry}
-          onDismiss={handleDismissNotification}
-          onMarkAsRead={handleMarkReadNotification}
-          onMarkAsSeated={handleMarkAsSeated}
-          onJumpToEntry={(resId) => {
-            setCurrentView('staff');
-          }}
-        />
-      )}
+    <div className="min-h-screen flex flex-col bg-[#F7F9F6] text-[#081C15]">
+      <Header
+        lang={lang}
+        onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
+        activeView={activeView}
+        onSelectView={(view) => navigateToView(view)}
+        branches={branches}
+        selectedBranch={selectedBranch}
+        onSelectBranch={(id) => setSelectedBranch(id)}
+      />
 
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center">
-              <img src="https://coal-sa.com/wp-content/uploads/2024/02/header_logo.png" alt="Coal Logo" className="h-12 object-contain" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <img 
-                  src="/coal-text-logo-dark.png" 
-                  alt="COAL" 
-                  style={{ width: '76.375px', height: '32px' }}
-                  className="object-contain" 
-                />
-                <span className="rounded-sm bg-[#c02126] px-1.5 py-0.2 text-[9px] font-bold text-white uppercase tracking-widest">
-                  Live
-                </span>
-              </div>
-            </div>
-          </div>
-
-
-          {/* Right Status Badges & Controls */}
-          <div className="flex items-center gap-2">
-            {/* Waitlist Open/Close Toggle (Staff Only) */}
-            {(currentView === 'staff') && (
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('/api/v1/settings', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ branch_id: branchId, is_waitlist_open: !isWaitlistOpen })
-                    });
-                    if (res.ok) {
-                      setIsWaitlistOpen(!isWaitlistOpen);
-                    }
-                  } catch (err) {
-                    console.error('Failed to toggle waitlist status', err);
-                  }
-                }}
-                title={isWaitlistOpen ? 'Waitlist is Open - Click to Close' : 'Waitlist is Closed - Click to Open'}
-                className={`hidden md:flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-mono font-bold transition cursor-pointer ${
-                  isWaitlistOpen 
-                    ? 'border-emerald-800 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/60' 
-                    : 'border-red-800 bg-red-950/40 text-red-400 hover:bg-red-900/60'
-                }`}
-              >
-                <span className={`h-2 w-2 rounded-full ${isWaitlistOpen ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                <span>{isWaitlistOpen ? 'WAITLIST OPEN' : 'WAITLIST CLOSED'}</span>
-              </button>
-            )}
-
-            {/* WebSocket Connection Pill */}
-            <div
-              title={isConnected ? 'Connected to WebSocket Server' : 'Connecting to WebSocket...'}
-              className="hidden md:flex items-center gap-1.5 rounded-full border border-neutral-800 bg-[#161616] px-2.5 py-1 text-[11px] text-neutral-400 font-mono"
-            >
-              
-            </div>
-
-            {/* Audio Toggle button */}
-            <button onClick={() => setLanguage(lang => lang === 'en' ? 'ar' : 'en')} title={language === 'en' ? 'Switch to Arabic (RTL)' : 'Switch to English (LTR)'} className="hidden md:flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-neutral-300 hover:bg-neutral-700 hover:text-white transition"><Languages className="h-4 w-4" /><span className="text-[11px] font-bold uppercase">{language === 'en' ? 'AR' : 'EN'}</span></button><button
-              id="header-sound-toggle"
-              onClick={handleToggleSound}
-              title={soundEnabled ? 'Audio chime alerts enabled' : 'Audio chime alerts muted'}
-              className={`rounded-lg border p-2 transition ${
-                soundEnabled
-                  ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-400 hover:bg-emerald-950/50'
-                  : 'border-neutral-700 bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-              }`}
-            >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </button>
-
-            {/* Notification Bell Badge */}
-            {(currentView === 'staff') && (
-            <button
-              id="header-notifications-bell"
-              onClick={() => setIsDrawerOpen(true)}
-              className="relative rounded-lg border border-neutral-700 bg-neutral-800/80 p-2 text-neutral-300 hover:bg-neutral-800 hover:text-white transition"
-              aria-label="Open notifications"
-            >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D32F2F] px-1 text-[10px] font-bold text-white shadow-xs animate-pulse">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Body */}
-      <main className="mx-auto w-full flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        {/* VIEW 1: STAFF DASHBOARD */}
-        {currentView === 'staff' && (
-          !staffToken ? (
-            <LoginScreen onLogin={(token) => {
-              localStorage.setItem('staffToken', token);
-              setStaffToken(token);
-            }} />
-          ) : (
-            <StaffDashboard language={language}
-              queue={queue}
-              stats={stats}
-              branchId={branchId}
-              onStatusChange={handleStatusChange}
-              onCreateWalkIn={handleCreateWalkIn}
-              onRefreshQueue={fetchQueue}
-              soundEnabled={soundEnabled}
-              onToggleSound={handleToggleSound}
-              onTestChime={handleTestChime}
-              unreadCount={unreadCount}
-              onOpenNotifications={() => setIsDrawerOpen(true)}
-              onSelectReservationForTracker={handleSelectReservationForTracker}
-              history={notificationHistory}
-              onDismissNotification={handleDismissNotification}
-              onMarkReadNotification={handleMarkReadNotification}
-              onMarkAllRead={handleMarkAllHistoryRead}
-              onRefreshHistory={fetchNotificationHistory}
-            />
-          )
+      <main className="flex-1">
+        {activeView === 'join' && (
+          <WaitlistJoinView
+            lang={lang}
+            branches={branches}
+            selectedBranchId={joinBranchId}
+            onSelectBranch={(id) => setSelectedBranch(id)}
+            entries={entries}
+            onJoinWaitlist={handleJoinWaitlist}
+            onOpenMap={() => navigateToView('map')}
+          />
         )}
 
-        {/* VIEW 2: CUSTOMER BOOKING FORM */}
-        {currentView === 'booking' && (
-          <div className="py-4">
-            <CustomerBookingForm language={language}
-              branchId={branchId}
-              stats={stats}
-              isWaitlistOpen={isWaitlistOpen}
-              onSuccess={(resId) => {
-                setActiveReservationId(resId);
-                setCurrentView('ticket');
-              }}
-            />
-          </div>
+        {activeView === 'map' && (
+          <LocationsMapView
+            lang={lang}
+            branches={branches}
+            selectedBranchId={joinBranchId}
+            onSelectBranch={(id) => setSelectedBranch(id)}
+            entries={entries}
+            onJoinBranchWaitlist={(id) => {
+              setSelectedBranch(id);
+              navigateToView('join');
+            }}
+          />
         )}
 
-        {/* VIEW 3: CUSTOMER LIVE TICKET TRACKER */}
-        {currentView === 'ticket' && (
-          <div className="py-4">
-            <CustomerTicketTracker language={language}
-              reservationId={activeReservationId}
-              socket={socket}
-              onBackToBooking={() => setCurrentView('booking')}
-              onSelectAnother={() => setCurrentView('staff')}
-            />
-          </div>
+        {activeView === 'ticket' && (
+          <TicketTrackerView
+            lang={lang}
+            branches={branches}
+            entries={entries}
+            activeTicketId={activeTicketId}
+            onSelectTicket={(id) => navigateToView('ticket', id)}
+            onTicketAction={(id, action) => handleTicketAction(id, action)}
+            onJoinAnother={() => navigateToView('join')}
+          />
         )}
 
-
+        {activeView === 'hostess' && (
+          <HostessDashboardView
+            lang={lang}
+            branches={branches}
+            selectedBranch={selectedBranch}
+            onToggleBranchOpen={handleToggleBranchOpen}
+            audioEnabled={audioEnabled}
+            onToggleAudio={() => setAudioEnabled((prev) => !prev)}
+            entries={entries}
+            onTicketAction={handleTicketAction}
+            onAddWalkin={handleAddWalkin}
+          />
+        )}
       </main>
 
-      {/* Slide-out Notifications Drawer */}
-      {(currentView === 'staff') && (
-      <NotificationDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        notifications={notifications}
-        onClearAll={() => setNotificationHistory([])}
-        onMarkAllRead={handleMarkAllHistoryRead}
-        soundEnabled={soundEnabled}
-        onToggleSound={handleToggleSound}
-        onTestChime={handleTestChime}
-      />
+      <footer className="border-t border-[#1B4332]/10 bg-[#FBFBFB] mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#081C15]/60">
+          <span>{t.footerCopy}</span>
+          <div className="flex items-center gap-2">
+            <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
+            <span>{isConnected ? (lang === 'ar' ? 'متصل بالشبكة الحية' : 'Live Cloud Sync') : (lang === 'ar' ? 'وضع غير متصل' : 'Offline / Standalone')}</span>
+            <span className="mx-1">•</span>
+            <span>{t.brandTagline}</span>
+          </div>
+        </div>
+      </footer>
+
+      {/* Live Toast Feedback */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50 max-w-sm rounded-xl px-4 py-3 shadow-xl backdrop-blur-md text-sm border flex items-center gap-3 transition-all animate-bounce bg-[#081C15]/95 text-[#FBFBFB] border-[#C5A059]/40"
+        >
+          <span>{toast.message}</span>
+        </div>
       )}
-
-
     </div>
   );
 }
-
-
-
-
-
-
-

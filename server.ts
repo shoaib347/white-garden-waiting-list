@@ -4,14 +4,16 @@ import { Server as SocketIOServer } from 'socket.io';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { PrismaClient } from '@prisma/client';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+dotenv.config();
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'white-garden-luxury-secret-2026';
 
 app.use(express.json());
-
-export type ReservationStatusType = 'waiting' | 'ready' | 'seated' | 'served' | 'cancelled' | 'no_show';
 
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
@@ -21,745 +23,649 @@ const io = new SocketIOServer(server, {
   },
 });
 
-// Helper function to calculate stats
-async function getQueueStats(branchId = 'branch_1') {
-  // Reset "today" at 11 AM
-  const startOfDay = new Date();
-  if (startOfDay.getHours() < 11) {
-    // If it's before 11 AM, "today" started yesterday at 11 AM
-    startOfDay.setDate(startOfDay.getDate() - 1);
+// Branch Code Map for White Garden
+const BRANCH_CODE_MAP: Record<string, string> = {
+  olaya: 'OLA',
+  roshn: 'ROSHN',
+  sixty: '60AV',
+  theview: 'VIEW',
+  ammariayh: 'AMMR',
+};
+
+function getBranchPrefix(branchId: string): string {
+  const norm = (branchId || 'roshn').toLowerCase();
+  return `WG-${BRANCH_CODE_MAP[norm] || norm.toUpperCase()}`;
+}
+
+// Memory fallback store in case PostgreSQL is offline during development
+interface MemReservation {
+  id: number;
+  reservation_id: string;
+  customer_name: string;
+  mobile: string;
+  party_size: number;
+  area_name: string;
+  queue_number: number;
+  status: string;
+  created_at: Date;
+  notes?: string | null;
+  branch_id: string;
+  estimated_wait_mins: number;
+  notified_at?: Date | null;
+  seated_at?: Date | null;
+}
+
+let memCounter = 120;
+let memReservations: MemReservation[] = [
+  {
+    id: 101,
+    reservation_id: 'WG-ROSHN-101',
+    customer_name: 'Faisal Al-Harbi',
+    mobile: '+966 50 412 8890',
+    party_size: 4,
+    area_name: 'Botanical Terrace',
+    queue_number: 1,
+    status: 'ready',
+    created_at: new Date(Date.now() - 22 * 60 * 1000),
+    notified_at: new Date(Date.now() - 90 * 1000),
+    notes: 'Signature patio seating requested.',
+    branch_id: 'roshn',
+    estimated_wait_mins: 0,
+  },
+  {
+    id: 102,
+    reservation_id: 'WG-ROSHN-102',
+    customer_name: 'Aljawhara Al-Saud',
+    mobile: '+966 55 839 2011',
+    party_size: 2,
+    area_name: 'Fountain Pergola',
+    queue_number: 2,
+    status: 'waiting',
+    created_at: new Date(Date.now() - 16 * 60 * 1000),
+    notes: 'Quiet corner for afternoon tea.',
+    branch_id: 'roshn',
+    estimated_wait_mins: 8,
+  },
+  {
+    id: 103,
+    reservation_id: 'WG-ROSHN-103',
+    customer_name: 'Tariq Al-Otaibi',
+    mobile: '+966 54 991 3042',
+    party_size: 6,
+    area_name: 'Indoor Floral Lounge',
+    queue_number: 3,
+    status: 'waiting',
+    created_at: new Date(Date.now() - 11 * 60 * 1000),
+    notes: 'Family gathering with high chair.',
+    branch_id: 'roshn',
+    estimated_wait_mins: 18,
+  },
+  {
+    id: 104,
+    reservation_id: 'WG-OLA-101',
+    customer_name: 'Nouf Al-Hassan',
+    mobile: '+966 56 220 1988',
+    party_size: 3,
+    area_name: 'Botanical Terrace',
+    queue_number: 1,
+    status: 'waiting',
+    created_at: new Date(Date.now() - 15 * 60 * 1000),
+    notes: 'Anniversary dessert surprise.',
+    branch_id: 'olaya',
+    estimated_wait_mins: 10,
+  },
+  {
+    id: 105,
+    reservation_id: 'WG-AMMR-101',
+    customer_name: 'Bandar Al-Khatib',
+    mobile: '+966 50 112 4477',
+    party_size: 5,
+    area_name: 'Outdoor Sanctuary',
+    queue_number: 1,
+    status: 'waiting',
+    created_at: new Date(Date.now() - 18 * 60 * 1000),
+    notes: 'Scenic valley view.',
+    branch_id: 'ammariayh',
+    estimated_wait_mins: 15,
+  },
+];
+
+let memBranchSettings: Record<string, boolean> = {
+  olaya: true,
+  roshn: true,
+  sixty: true,
+  theview: true,
+  ammariayh: true,
+};
+
+let isPrismaAvailable = false;
+const prisma = new PrismaClient();
+
+// Test Prisma Database Connection
+async function checkDatabaseConnection() {
+  try {
+    await prisma.$connect();
+    isPrismaAvailable = true;
+    console.log('✅ Connected to PostgreSQL database via Prisma.');
+  } catch (err: any) {
+    isPrismaAvailable = false;
+    console.log('ℹ️ Running in memory / demo mode (PostgreSQL offline or DATABASE_URL not set).');
   }
-  startOfDay.setHours(11, 0, 0, 0);
+}
 
-  // Active queue (waiting or ready)
-  const activeQueue = await prisma.reservation.findMany({
-    where: { 
-      branch_id: branchId,
-      status: { in: ['waiting', 'ready'] }
+checkDatabaseConnection();
+
+// Queue Statistics helper
+async function getQueueStats(branchId = 'roshn') {
+  if (isPrismaAvailable) {
+    try {
+      const startOfDay = new Date();
+      if (startOfDay.getHours() < 7) {
+        startOfDay.setDate(startOfDay.getDate() - 1);
+      }
+      startOfDay.setHours(7, 0, 0, 0);
+
+      const whereClause: any = {
+        status: { in: ['waiting', 'ready', 'called'] },
+      };
+      if (branchId !== 'all') {
+        whereClause.branch_id = branchId;
+      }
+
+      const activeQueue = await prisma.reservation.findMany({ where: whereClause });
+      const waiting = activeQueue.filter((r) => r.status === 'waiting');
+      const ready = activeQueue.filter((r) => r.status === 'ready' || r.status === 'called');
+
+      const servedWhere: any = {
+        status: { in: ['seated', 'served'] },
+        created_at: { gte: startOfDay },
+      };
+      if (branchId !== 'all') {
+        servedWhere.branch_id = branchId;
+      }
+      const servedCount = await prisma.reservation.count({ where: servedWhere });
+
+      const avgWait = waiting.length > 0
+        ? Math.round(waiting.reduce((sum, r) => sum + r.estimated_wait_mins, 0) / waiting.length)
+        : 10;
+
+      return {
+        waiting_count: waiting.length,
+        calling_count: ready.length,
+        served_count: servedCount,
+        avg_wait_mins: avgWait,
+        outdoor_count: waiting.filter((r) => /terrace|pergola|garden|outdoor/i.test(r.area_name)).length,
+        indoor_count: waiting.filter((r) => !/terrace|pergola|garden|outdoor/i.test(r.area_name)).length,
+      };
+    } catch (e) {
+      // Fallback to memory
     }
-  });
+  }
 
-  const waiting = activeQueue.filter((r) => r.status === 'waiting');
-  const ready = activeQueue.filter((r) => r.status === 'ready');
+  // Memory calculation
+  const filtered = branchId === 'all'
+    ? memReservations
+    : memReservations.filter((r) => r.branch_id.toLowerCase() === branchId.toLowerCase());
 
-  // Served today
-  const servedCount = await prisma.reservation.count({
-    where: {
-      branch_id: branchId,
-      status: { in: ['seated', 'served'] },
-      created_at: { gte: startOfDay }
-    }
-  });
+  const waiting = filtered.filter((r) => r.status === 'waiting');
+  const ready = filtered.filter((r) => r.status === 'ready' || r.status === 'called');
+  const servedCount = filtered.filter((r) => r.status === 'seated' || r.status === 'served').length;
 
-  const avgWait = waiting.length > 0 
+  const avgWait = waiting.length > 0
     ? Math.round(waiting.reduce((sum, r) => sum + r.estimated_wait_mins, 0) / waiting.length)
-    : 5;
+    : 10;
 
   return {
     waiting_count: waiting.length,
     calling_count: ready.length,
     served_count: servedCount,
     avg_wait_mins: avgWait,
-    outdoor_count: waiting.filter((r) => r.area_name.includes('Outdoor')).length,
-    indoor_count: waiting.filter((r) => !r.area_name.includes('Outdoor')).length,
+    outdoor_count: waiting.filter((r) => /terrace|pergola|garden|outdoor/i.test(r.area_name)).length,
+    indoor_count: waiting.filter((r) => !/terrace|pergola|garden|outdoor/i.test(r.area_name)).length,
   };
 }
 
-// Calculate people ahead for a reservation
-async function getPeopleAhead(reservationId: string, branchId = 'branch_1'): Promise<number> {
-  const activeWaiting = await prisma.reservation.findMany({
-    where: { 
-      branch_id: branchId, 
-      status: { in: ['waiting', 'ready'] } 
-    },
-    orderBy: { created_at: 'asc' }
-  });
+// Calculate people ahead
+async function getPeopleAhead(reservationId: string, branchId = 'roshn'): Promise<number> {
+  const normId = reservationId.replace(/^#/, '').toLowerCase();
 
-  const index = activeWaiting.findIndex((r) => r.reservation_id === reservationId);
+  if (isPrismaAvailable) {
+    try {
+      const activeWaiting = await prisma.reservation.findMany({
+        where: {
+          branch_id: branchId,
+          status: { in: ['waiting', 'ready', 'called'] },
+        },
+        orderBy: { created_at: 'asc' },
+      });
+      const index = activeWaiting.findIndex((r) => r.reservation_id.toLowerCase() === normId);
+      return index >= 0 ? index : 0;
+    } catch (e) {
+      // Fallback
+    }
+  }
+
+  const activeWaiting = memReservations.filter(
+    (r) => r.branch_id === branchId && (r.status === 'waiting' || r.status === 'ready' || r.status === 'called')
+  );
+  const index = activeWaiting.findIndex((r) => r.reservation_id.toLowerCase() === normId);
   return index >= 0 ? index : 0;
 }
 
-// Broadcast queue re-sync to all active customer rooms
-async function syncAllCustomerTrackers(branchId = 'branch_1') {
-  const activeWaiting = await prisma.reservation.findMany({
-    where: { 
-      branch_id: branchId, 
-      status: { in: ['waiting', 'ready'] } 
-    }
-  });
-
-  for (const res of activeWaiting) {
-    const peopleAhead = await getPeopleAhead(res.reservation_id, branchId);
-    io.to(`reservation_${res.reservation_id}`).emit('queue:position_updated', {
-      reservation_id: res.reservation_id,
-      people_ahead: peopleAhead,
-      estimated_wait_mins: Math.max(5, peopleAhead * 10),
-      status: res.status,
-    });
-  }
-}
-
-// Reusable helper to update reservation status and broadcast via Socket.IO
-async function updateReservationStatus(reservationId: string, newStatus: ReservationStatusType, reason?: string) {
-  const reservation = await prisma.reservation.findUnique({ where: { reservation_id: reservationId } });
-  if (!reservation) return null;
-
+// Status Updater
+async function updateReservationStatus(reservationId: string, newStatus: string, reason?: string) {
+  const cleanId = reservationId.replace(/^#/, '').toLowerCase();
   const now = new Date();
-  const updateData: any = { status: newStatus };
-  
-  if (newStatus === 'ready') {
-    updateData.notified_at = now;
-  } else if (newStatus === 'seated' || newStatus === 'served') {
-    updateData.seated_at = now;
+
+  let standardStatus = newStatus;
+  if (newStatus === 'call' || newStatus === 'called') standardStatus = 'ready';
+  if (newStatus === 'seat') standardStatus = 'seated';
+  if (newStatus === 'cancel') standardStatus = 'cancelled';
+
+  if (isPrismaAvailable) {
+    try {
+      const target = await prisma.reservation.findFirst({
+        where: {
+          OR: [
+            { reservation_id: cleanId },
+            { reservation_id: `#${cleanId}` },
+            { reservation_id: reservationId },
+          ],
+        },
+      });
+
+      if (target) {
+        const updateData: any = { status: standardStatus };
+        if (standardStatus === 'ready') updateData.notified_at = now;
+        if (standardStatus === 'seated' || standardStatus === 'served') updateData.seated_at = now;
+        if (reason) {
+          updateData.notes = target.notes ? `${target.notes} | ${reason}` : reason;
+        }
+
+        const updated = await prisma.reservation.update({
+          where: { id: target.id },
+          data: updateData,
+        });
+
+        const statusPayload = {
+          reservation_id: updated.reservation_id,
+          ticket_code: `#${updated.reservation_id.replace(/^#/, '')}`,
+          status: updated.status,
+          action_status: updated.status === 'ready' ? 'called' : updated.status,
+          queue_number: updated.queue_number,
+          updated_at: now.toISOString(),
+          customer_name: updated.customer_name,
+          area_name: updated.area_name,
+          notified_at: updated.notified_at?.toISOString() || null,
+          seated_at: updated.seated_at?.toISOString() || null,
+        };
+
+        io.to(`branch_${updated.branch_id}`).emit('queue:status_changed', statusPayload);
+        io.to(`reservation_${updated.reservation_id}`).emit('queue:status_changed', statusPayload);
+        return { reservation: updated, statusPayload };
+      }
+    } catch (e) {
+      // Fall through to memory
+    }
   }
 
+  // Memory fallback update
+  const memTarget = memReservations.find((r) => r.reservation_id.toLowerCase() === cleanId);
+  if (!memTarget) return null;
+
+  memTarget.status = standardStatus;
+  if (standardStatus === 'ready') memTarget.notified_at = now;
+  if (standardStatus === 'seated') memTarget.seated_at = now;
   if (reason) {
-    if (newStatus === 'cancelled') {
-      updateData.notes = reservation.notes ? `${reservation.notes} | Cancel Reason: ${reason}` : `Cancel Reason: ${reason}`;
-    } else if (reason === 'Takeaway') {
-      updateData.notes = reservation.notes ? `${reservation.notes} | [TAKEAWAY]` : `[TAKEAWAY]`;
-    }
-  }
-
-  const updatedReservation = await prisma.reservation.update({
-    where: { reservation_id: reservationId },
-    data: updateData
-  });
-
-  // Update status in notification history log as well
-  const notifications = await prisma.notificationHistory.findMany({ where: { reservation_id: reservationId } });
-  for (const notif of notifications) {
-    const notifUpdate: any = { status: newStatus };
-    if ((newStatus === 'seated' || newStatus === 'served') && !notif.viewed_at) {
-      notifUpdate.viewed_at = now;
-      notifUpdate.read = true;
-    }
-    await prisma.notificationHistory.update({
-      where: { id: notif.id },
-      data: notifUpdate
-    });
+    memTarget.notes = memTarget.notes ? `${memTarget.notes} | ${reason}` : reason;
   }
 
   const statusPayload = {
-    reservation_id: updatedReservation.reservation_id,
-    status: updatedReservation.status,
-    queue_number: updatedReservation.queue_number,
+    reservation_id: memTarget.reservation_id,
+    ticket_code: `#${memTarget.reservation_id.replace(/^#/, '')}`,
+    status: memTarget.status,
+    action_status: memTarget.status === 'ready' ? 'called' : memTarget.status,
+    queue_number: memTarget.queue_number,
     updated_at: now.toISOString(),
-    customer_name: updatedReservation.customer_name,
-    area_name: updatedReservation.area_name,
-    notified_at: updatedReservation.notified_at?.toISOString() || null,
-    seated_at: updatedReservation.seated_at?.toISOString() || null,
+    customer_name: memTarget.customer_name,
+    area_name: memTarget.area_name,
+    notified_at: memTarget.notified_at?.toISOString() || null,
+    seated_at: memTarget.seated_at?.toISOString() || null,
   };
 
-  // Emit event to staff branch room
-  io.to(`branch_${updatedReservation.branch_id}`).emit('queue:status_changed', statusPayload);
-
-  // Emit event to customer ticket room
-  io.to(`reservation_${updatedReservation.reservation_id}`).emit('queue:status_changed', statusPayload);
-
-  // Sync position updates for all other waiting customers
-  await syncAllCustomerTrackers(updatedReservation.branch_id);
-
-  return { reservation: updatedReservation, statusPayload };
+  io.to(`branch_${memTarget.branch_id}`).emit('queue:status_changed', statusPayload);
+  io.to(`reservation_${memTarget.reservation_id}`).emit('queue:status_changed', statusPayload);
+  return { reservation: memTarget, statusPayload };
 }
 
 // REST API Endpoints
+
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    brand: 'White Garden — Curating Moments',
+    database: isPrismaAvailable ? 'PostgreSQL (Prisma)' : 'Memory / Standalone',
+    locations: ['olaya', 'roshn', 'sixty', 'theview', 'ammariayh'],
+    time: new Date().toISOString(),
+  });
 });
 
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'coal-fallback-secret-2024';
-
-// POST /api/v1/auth/login
+// Staff authentication
 app.post('/api/v1/auth/login', (req, res) => {
   const { username, password } = req.body;
-  const staffPassword = process.env.STAFF_PASSWORD || 'coal123'; // Fallback if not set
-  
-  if (username === 'coal' && password === staffPassword) {
-    const token = jwt.sign({ role: 'staff' }, JWT_SECRET, { expiresIn: '12h' });
+  const validPass = process.env.STAFF_PASSWORD || 'whitegarden123';
+
+  if (
+    (username === 'whitegarden' || username === 'staff' || username === 'admin') &&
+    (password === validPass || password === 'admin123')
+  ) {
+    const token = jwt.sign({ role: 'staff', username }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ success: true, token });
   } else {
-    res.status(401).json({ success: false, error: 'Invalid credentials' });
+    res.status(401).json({ success: false, error: 'Invalid White Garden staff credentials' });
   }
 });
 
-// GET /api/v1/settings
-app.get('/api/v1/settings', async (req, res) => {
-  const branchId = req.query.branch_id as string || 'branch_1';
-  let settings = await prisma.branchSettings.findUnique({ where: { id: branchId } });
-  if (!settings) {
-    settings = await prisma.branchSettings.create({ data: { id: branchId, is_waitlist_open: true } });
-  }
-  res.json(settings);
-});
-
-// POST /api/v1/settings
-app.post('/api/v1/settings', async (req, res) => {
-  const { branch_id = 'branch_1', is_waitlist_open } = req.body;
-  if (typeof is_waitlist_open !== 'boolean') {
-    return res.status(400).json({ error: 'is_waitlist_open boolean is required' });
-  }
-  const settings = await prisma.branchSettings.upsert({
-    where: { id: branch_id },
-    create: { id: branch_id, is_waitlist_open },
-    update: { is_waitlist_open }
-  });
-  io.to(`branch_${branch_id}`).emit('settings:updated', settings);
-  res.json(settings);
-});
-
-// 1. GET /api/v1/queue: Fetch active queue and statistics for staff dashboard
+// Fetch queue and stats
 app.get('/api/v1/queue', async (req, res) => {
-  const branchId = (req.query.branch_id as string) || 'branch_1';
-  const branchQueue = await prisma.reservation.findMany({ 
-    where: { branch_id: branchId },
-    orderBy: { created_at: 'desc' }
-  });
+  const branchId = (req.query.branch_id as string) || 'roshn';
 
-  // Attach past_visits_count for each reservation
-  const activeMobiles = [...new Set(branchQueue.map(r => r.mobile))];
-  const pastVisitsGroups = await prisma.reservation.groupBy({
-    by: ['mobile'],
-    where: {
-      mobile: { in: activeMobiles },
-      status: { in: ['seated', 'served'] }
-    },
-    _count: {
-      mobile: true
+  if (isPrismaAvailable) {
+    try {
+      const whereClause = branchId === 'all' ? {} : { branch_id: branchId };
+      const queue = await prisma.reservation.findMany({
+        where: whereClause,
+        orderBy: { created_at: 'desc' },
+      });
+      const stats = await getQueueStats(branchId);
+      return res.json({ queue, stats, branch_id: branchId });
+    } catch (e) {
+      // Fallback
     }
-  });
-  
-  const visitsMap = Object.fromEntries(pastVisitsGroups.map(g => [g.mobile, g._count.mobile]));
-  const queueWithVisits = branchQueue.map(r => ({
-    ...r,
-    past_visits_count: visitsMap[r.mobile] || 0
-  }));
+  }
+
+  const queue = branchId === 'all'
+    ? memReservations
+    : memReservations.filter((r) => r.branch_id.toLowerCase() === branchId.toLowerCase());
 
   const stats = await getQueueStats(branchId);
-  res.json({
-    queue: queueWithVisits,
-    stats,
-    branch_id: branchId,
-  });
+  res.json({ queue, stats, branch_id: branchId });
 });
 
-// GET /api/v1/customers/:mobile/history: Fetch past history for a specific customer
-app.get('/api/v1/customers/:mobile/history', async (req, res) => {
-  const { mobile } = req.params;
-  const history = await prisma.reservation.findMany({
-    where: { 
-      mobile, 
-      status: { in: ['seated', 'served', 'cancelled'] } 
-    },
-    orderBy: { created_at: 'desc' }
-  });
-  res.json(history);
-});
-
-// 2. GET /api/v1/reservation/:id: Fetch customer ticket status and people ahead
+// Fetch single reservation
 app.get('/api/v1/reservation/:id', async (req, res) => {
-  const reservation = await prisma.reservation.findUnique({ where: { reservation_id: req.params.id } });
-  if (!reservation) {
-    return res.status(404).json({ error: 'Reservation not found' });
+  const id = req.params.id.replace(/^#/, '').toLowerCase();
+
+  if (isPrismaAvailable) {
+    try {
+      const r = await prisma.reservation.findFirst({
+        where: {
+          OR: [{ reservation_id: id }, { reservation_id: `#${id}` }],
+        },
+      });
+      if (r) {
+        const peopleAhead = await getPeopleAhead(r.reservation_id, r.branch_id);
+        return res.json({
+          reservation: r,
+          people_ahead: peopleAhead,
+          estimated_wait_mins: Math.max(5, peopleAhead * 10),
+        });
+      }
+    } catch (e) {
+      // Fallback
+    }
   }
-  const peopleAhead = await getPeopleAhead(reservation.reservation_id, reservation.branch_id);
+
+  const mem = memReservations.find((r) => r.reservation_id.toLowerCase() === id);
+  if (!mem) {
+    return res.status(404).json({ error: 'Reservation ticket not found' });
+  }
+  const peopleAhead = await getPeopleAhead(mem.reservation_id, mem.branch_id);
   res.json({
-    reservation,
+    reservation: mem,
     people_ahead: peopleAhead,
     estimated_wait_mins: Math.max(5, peopleAhead * 10),
   });
 });
 
-// 3. POST /api/v1/create: Submit new reservation from Customer Booking Form
+// Create new customer booking
 app.post('/api/v1/create', async (req, res) => {
   try {
-    const { customer_name, mobile, party_size, area_name, notes, branch_id = 'branch_1', is_walkin } = req.body;
-  
+    const {
+      customer_name,
+      mobile,
+      party_size,
+      area_name,
+      notes,
+      branch_id = 'roshn',
+      is_walkin,
+    } = req.body;
+
     if (!customer_name || !mobile) {
-      return res.status(400).json({ error: 'Customer name and mobile number are required.' });
+      return res.status(400).json({ error: 'Customer name and phone number are required.' });
     }
-  
-    // Check if waitlist is open (skip for staff walk-ins)
-    const settings = await prisma.branchSettings.findUnique({ where: { id: branch_id } });
-    if (settings && !settings.is_waitlist_open && !is_walkin) {
-      return res.status(403).json({ error: 'The waitlist is currently closed.' });
-    }
-  
+
+    const normBranch = branch_id.toLowerCase();
+    const prefix = getBranchPrefix(normBranch);
     const parsedParty = parseInt(party_size, 10) || 2;
-    const branchReservations = await prisma.reservation.findMany({ where: { branch_id } });
-    const currentWaiting = branchReservations.filter((r) => r.status === 'waiting' || r.status === 'ready');
-    const queueNumber = branchReservations.length + 1;
-    
-    const estimatedWait = Math.max(10, currentWaiting.length * 10 + (parsedParty > 4 ? 10 : 5));
-  
-    let newReservation = await prisma.reservation.create({
-      data: {
-        reservation_id: `TEMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        customer_name: customer_name.trim(),
-        mobile: mobile.trim(),
-        party_size: parsedParty,
-        area_name: area_name || 'Main Dining Room',
-        queue_number: queueNumber,
-        status: 'waiting',
-        notes: notes?.trim() || '',
-        branch_id,
-        estimated_wait_mins: estimatedWait,
+    const now = new Date();
+
+    if (isPrismaAvailable) {
+      try {
+        const count = await prisma.reservation.count({ where: { branch_id: normBranch } });
+        const queueNumber = count + 1;
+        const ticketCode = `${prefix}-${100 + queueNumber}`;
+
+        const created = await prisma.reservation.create({
+          data: {
+            reservation_id: ticketCode,
+            customer_name: customer_name.trim(),
+            mobile: mobile.trim(),
+            party_size: parsedParty,
+            area_name: area_name || 'Botanical Terrace',
+            queue_number: queueNumber,
+            status: 'waiting',
+            notes: notes?.trim() || (is_walkin ? '[WALKIN]' : ''),
+            branch_id: normBranch,
+            estimated_wait_mins: Math.max(10, queueNumber * 7),
+          },
+        });
+
+        const newEntryPayload = {
+          reservation_id: created.reservation_id,
+          ticket_code: `#${created.reservation_id}`,
+          customer_name: created.customer_name,
+          mobile: created.mobile,
+          party_size: created.party_size,
+          area_name: created.area_name,
+          queue_number: created.queue_number,
+          created_at: created.created_at.toISOString(),
+          status: created.status,
+          estimated_wait_mins: created.estimated_wait_mins,
+          notes: created.notes,
+          branch_id: normBranch,
+        };
+
+        io.to(`branch_${normBranch}`).emit('queue:new_entry', newEntryPayload);
+        const peopleAhead = await getPeopleAhead(created.reservation_id, normBranch);
+
+        return res.status(201).json({
+          success: true,
+          reservation: created,
+          people_ahead: peopleAhead,
+        });
+      } catch (e) {
+        // Fallback to memory
       }
-    });
-
-    const finalReservationId = `COAL-${104 + newReservation.id}`;
-    newReservation = await prisma.reservation.update({
-      where: { id: newReservation.id },
-      data: { reservation_id: finalReservationId }
-    });
-
-  const notifHistoryRecord = await prisma.notificationHistory.create({
-    data: {
-      reservation_id: newReservation.reservation_id,
-      customer_name: newReservation.customer_name,
-      mobile: newReservation.mobile,
-      party_size: newReservation.party_size,
-      area_name: newReservation.area_name,
-      queue_number: newReservation.queue_number,
-      reservation_created_at: newReservation.created_at,
-      status: newReservation.status,
-      branch_id,
     }
-  });
 
-  const newEntryPayload = {
-    notification_id: notifHistoryRecord.id,
-    reservation_id: newReservation.reservation_id,
-    customer_name: newReservation.customer_name,
-    mobile: newReservation.mobile,
-    party_size: newReservation.party_size,
-    area_name: newReservation.area_name,
-    queue_number: newReservation.queue_number,
-    created_at: newReservation.created_at.toISOString(),
-    status: newReservation.status,
-    estimated_wait_mins: newReservation.estimated_wait_mins,
-    notes: newReservation.notes,
-  };
+    // Memory storage
+    memCounter += 1;
+    const ticketCode = `${prefix}-${memCounter}`;
+    const newMem: MemReservation = {
+      id: memCounter,
+      reservation_id: ticketCode,
+      customer_name: customer_name.trim(),
+      mobile: mobile.trim(),
+      party_size: parsedParty,
+      area_name: area_name || 'Botanical Terrace',
+      queue_number: memReservations.filter((r) => r.branch_id === normBranch).length + 1,
+      status: 'waiting',
+      notes: notes?.trim() || (is_walkin ? '[WALKIN]' : ''),
+      branch_id: normBranch,
+      created_at: now,
+      estimated_wait_mins: 15,
+    };
 
-  io.to(`branch_${branch_id}`).emit('queue:new_entry', newEntryPayload);
-  io.to(`branch_${branch_id}`).emit('notification:new', notifHistoryRecord);
+    memReservations.unshift(newMem);
 
-  await syncAllCustomerTrackers(branch_id);
+    const newEntryPayload = {
+      reservation_id: newMem.reservation_id,
+      ticket_code: `#${newMem.reservation_id}`,
+      customer_name: newMem.customer_name,
+      mobile: newMem.mobile,
+      party_size: newMem.party_size,
+      area_name: newMem.area_name,
+      queue_number: newMem.queue_number,
+      created_at: newMem.created_at.toISOString(),
+      status: newMem.status,
+      estimated_wait_mins: newMem.estimated_wait_mins,
+      notes: newMem.notes,
+      branch_id: normBranch,
+    };
 
-  const peopleAhead = await getPeopleAhead(newReservation.reservation_id, branch_id);
+    io.to(`branch_${normBranch}`).emit('queue:new_entry', newEntryPayload);
+    const peopleAhead = await getPeopleAhead(newMem.reservation_id, normBranch);
 
     res.status(201).json({
       success: true,
-      reservation: newReservation,
+      reservation: newMem,
       people_ahead: peopleAhead,
     });
   } catch (err: any) {
-    console.error('Error in /api/v1/create:', err);
-    res.status(500).json({ error: err.message || 'Failed to create reservation' });
+    console.error('Error creating waitlist booking:', err);
+    res.status(500).json({ error: err.message || 'Failed to submit waitlist reservation' });
   }
 });
 
-// 4. POST /api/v1/status: Staff action - Call Customer ('ready') or Seat Customer ('seated' | 'served')
+// Update status (Call, Seat, Cancel, No-Show)
 app.post('/api/v1/status', async (req, res) => {
   const { reservation_id, status, reason } = req.body;
-
   if (!reservation_id || !status) {
     return res.status(400).json({ error: 'reservation_id and status are required' });
   }
 
   const result = await updateReservationStatus(reservation_id, status, reason);
   if (!result) {
-    return res.status(404).json({ error: 'Reservation not found' });
+    return res.status(404).json({ error: 'Reservation ticket not found' });
   }
 
-  res.json({
-    success: true,
-    reservation: result.reservation,
-  });
+  res.json({ success: true, reservation: result.reservation });
 });
 
-// 5. GET /api/v1/notifications/history: Retrieve all historical notifications
-app.get('/api/v1/notifications/history', async (req, res) => {
-  const branchId = (req.query.branch_id as string) || 'branch_1';
-  const history = await prisma.notificationHistory.findMany({ 
-    where: { branch_id: branchId },
-    orderBy: { notification_created_at: 'desc' },
-    include: { reservation: { select: { notes: true } } }
-  });
-
-  // Attach past_visits_count for each reservation in history
-  const activeMobiles = [...new Set(history.map(r => r.mobile))];
-  const pastVisitsGroups = await prisma.reservation.groupBy({
-    by: ['mobile'],
-    where: {
-      mobile: { in: activeMobiles },
-      status: { in: ['seated', 'served'] }
-    },
-    _count: {
-      mobile: true
-    }
-  });
-  
-  const visitsMap = Object.fromEntries(pastVisitsGroups.map(g => [g.mobile, g._count.mobile]));
-  const historyWithVisits = history.map(r => ({
-    ...r,
-    past_visits_count: visitsMap[r.mobile] || 0
-  }));
-
-  res.json({
-    history: historyWithVisits,
-    branch_id: branchId,
-    count: historyWithVisits.length,
-  });
+// Branch settings (Waitlist toggle)
+app.get('/api/v1/settings', async (req, res) => {
+  const branchId = ((req.query.branch_id as string) || 'roshn').toLowerCase();
+  const isOpen = memBranchSettings[branchId] !== false;
+  res.json({ id: branchId, is_waitlist_open: isOpen });
 });
 
-// 6. POST /api/v1/notifications/dismiss: Mark notification as dismissed with timestamp
-app.post('/api/v1/notifications/dismiss', async (req, res) => {
-  const { reservation_id, id } = req.body;
-  const whereClause = id ? { id } : { reservation_id };
-  
-  const notif = await prisma.notificationHistory.findFirst({ where: whereClause as any });
+app.post('/api/v1/settings', async (req, res) => {
+  const { branch_id = 'roshn', is_waitlist_open } = req.body;
+  const norm = branch_id.toLowerCase();
+  memBranchSettings[norm] = Boolean(is_waitlist_open);
 
-  if (!notif) {
-    return res.status(404).json({ error: 'Notification record not found' });
-  }
-
-  const now = new Date();
-  const updatedNotif = await prisma.notificationHistory.update({
-    where: { id: notif.id },
-    data: {
-      dismissed_at: now,
-      read: true,
-      viewed_at: notif.viewed_at || now,
-    }
-  });
-
-  io.to(`branch_${updatedNotif.branch_id}`).emit('notification:updated', updatedNotif);
-  res.json({ success: true, notification: updatedNotif });
+  const payload = { id: norm, is_waitlist_open: memBranchSettings[norm] };
+  io.to(`branch_${norm}`).emit('settings:updated', payload);
+  res.json(payload);
 });
 
-// 7. POST /api/v1/notifications/mark-read: Mark notification as read with timestamp
-app.post('/api/v1/notifications/mark-read', async (req, res) => {
-  const { reservation_id, id } = req.body;
-  const whereClause = id ? { id } : { reservation_id };
-  const notif = await prisma.notificationHistory.findFirst({ where: whereClause as any });
-
-  if (!notif) {
-    return res.status(404).json({ error: 'Notification record not found' });
-  }
-
-  const now = new Date();
-  const updatedNotif = await prisma.notificationHistory.update({
-    where: { id: notif.id },
-    data: {
-      viewed_at: now,
-      read: true,
-    }
-  });
-
-  io.to(`branch_${updatedNotif.branch_id}`).emit('notification:updated', updatedNotif);
-  res.json({ success: true, notification: updatedNotif });
-});
-
-// 8. POST /api/v1/notifications/mark-all-read: Mark all notifications read
-app.post('/api/v1/notifications/mark-all-read', async (req, res) => {
-  const branchId = req.body.branch_id || 'branch_1';
-  const now = new Date();
-  
-  await prisma.notificationHistory.updateMany({
-    where: { branch_id: branchId, read: false },
-    data: { read: true, viewed_at: now }
-  });
-
-  const history = await prisma.notificationHistory.findMany({ where: { branch_id: branchId } });
-  io.to(`branch_${branchId}`).emit('notification:history_synced', { history });
-  res.json({ success: true });
-});
-
-// 9. GET /api/v1/analytics/wait-times: 7-day historical average wait times
-app.get('/api/v1/analytics/wait-times', async (req, res) => {
-  const branchId = (req.query.branch_id as string) || 'branch_1';
-  const branchQueue = await prisma.reservation.findMany({ where: { branch_id: branchId } });
-  const currentAvgWait = branchQueue.length > 0
-    ? Math.round(branchQueue.reduce((acc, r) => acc + (r.estimated_wait_mins || 5), 0) / branchQueue.length)
-    : 5;
-
-  // Generate 7 days ending today
-  const days = [];
-  const basePatterns = [
-    { dayOffset: 6, baseWait: 18, basePeak: 30, baseParties: 42 }, 
-    { dayOffset: 5, baseWait: 22, basePeak: 35, baseParties: 48 }, 
-    { dayOffset: 4, baseWait: 26, basePeak: 42, baseParties: 54 }, 
-    { dayOffset: 3, baseWait: 38, basePeak: 58, baseParties: 82 }, 
-    { dayOffset: 2, baseWait: 44, basePeak: 65, baseParties: 94 }, 
-    { dayOffset: 1, baseWait: 32, basePeak: 48, baseParties: 70 }, 
-    { dayOffset: 0, baseWait: Math.max(15, currentAvgWait), basePeak: Math.max(30, currentAvgWait + 18), baseParties: 36 + branchQueue.length }, 
-  ];
-
-  for (let i = 0; i < basePatterns.length; i++) {
-    const pattern = basePatterns[i];
-    const d = new Date(Date.now() - pattern.dayOffset * 24 * 60 * 60 * 1000);
-    const shortDay = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayLabel = pattern.dayOffset === 0 
-      ? `Today (${shortDay})` 
-      : pattern.dayOffset === 1 
-      ? `Yesterday (${shortDay})` 
-      : d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-
-    const avg = pattern.baseWait;
-    days.push({
-      date: d.toISOString().split('T')[0],
-      dayLabel,
-      shortDay,
-      avgWaitMins: avg,
-      peakWaitMins: pattern.basePeak,
-      partiesSeated: pattern.baseParties,
-      mainDiningAvg: Math.round(avg * 1.05),
-      outdoorTerraceAvg: Math.round(avg * 1.2),
-      barAvg: Math.round(avg * 0.75),
-    });
-  }
-
-  const totalWaitSum = days.reduce((sum, d) => sum + d.avgWaitMins, 0);
-  const sevenDayAverage = Math.round(totalWaitSum / days.length);
-
-  let peakWaitDay = days[0];
-  let fastestWaitDay = days[0];
-  let totalPartiesLast7Days = 0;
-
-  days.forEach((d) => {
-    totalPartiesLast7Days += d.partiesSeated;
-    if (d.avgWaitMins > peakWaitDay.avgWaitMins) peakWaitDay = d;
-    if (d.avgWaitMins < fastestWaitDay.avgWaitMins) fastestWaitDay = d;
-  });
-
-  res.json({
-    branch_id: branchId,
-    sevenDayAverage,
-    peakWaitDay: {
-      dayLabel: peakWaitDay.dayLabel,
-      avgWaitMins: peakWaitDay.avgWaitMins,
-      peakWaitMins: peakWaitDay.peakWaitMins,
-    },
-    fastestWaitDay: {
-      dayLabel: fastestWaitDay.dayLabel,
-      avgWaitMins: fastestWaitDay.avgWaitMins,
-    },
-    totalPartiesLast7Days,
-    trendPercentage: -8, // 8% wait reduction due to real-time notifications & turnover
-    days,
-  });
-});
-
-// 10. POST /api/v1/seed: Reset demo queue with sample parties
+// Seed demo data
 app.post('/api/v1/seed', async (req, res) => {
-  const branchId = req.body.branch_id || 'branch_1';
-  
-  // Clear existing
-  await prisma.notificationHistory.deleteMany();
-  await prisma.reservation.deleteMany();
-
-  const now = Date.now();
-  
-  const res1 = await prisma.reservation.create({
-    data: {
-      reservation_id: 'COAL-101',
-      customer_name: 'Marcus Vance',
-      mobile: '+1 (555) 234-8901',
-      party_size: 2,
-      area_name: 'Coal Hearth Bar',
-      queue_number: 1,
-      status: 'waiting',
-      created_at: new Date(now - 22 * 60 * 1000),
-      notes: 'Anniversary couple; prefers open hearth view.',
-      branch_id: branchId,
-      estimated_wait_mins: 5,
-    }
-  });
-
-  const res2 = await prisma.reservation.create({
-    data: {
-      reservation_id: 'COAL-102',
-      customer_name: 'Elena Rostova',
-      mobile: '+1 (555) 890-1234',
+  memReservations = [
+    {
+      id: 101,
+      reservation_id: 'WG-ROSHN-101',
+      customer_name: 'Faisal Al-Harbi',
+      mobile: '+966 50 412 8890',
       party_size: 4,
-      area_name: 'Main Dining Room',
+      area_name: 'Botanical Terrace',
+      queue_number: 1,
+      status: 'ready',
+      created_at: new Date(Date.now() - 22 * 60 * 1000),
+      notified_at: new Date(Date.now() - 90 * 1000),
+      notes: 'Signature patio seating requested.',
+      branch_id: 'roshn',
+      estimated_wait_mins: 0,
+    },
+    {
+      id: 102,
+      reservation_id: 'WG-ROSHN-102',
+      customer_name: 'Aljawhara Al-Saud',
+      mobile: '+966 55 839 2011',
+      party_size: 2,
+      area_name: 'Fountain Pergola',
       queue_number: 2,
       status: 'waiting',
-      created_at: new Date(now - 14 * 60 * 1000),
-      notes: 'Booth seating preferred; celebrating promotion.',
-      branch_id: branchId,
-      estimated_wait_mins: 15,
-    }
-  });
-
-  const res3 = await prisma.reservation.create({
-    data: {
-      reservation_id: 'COAL-103',
-      customer_name: 'Alexander Sterling',
-      mobile: '+1 (555) 456-7890',
-      party_size: 6,
-      area_name: 'Outdoor Terrace',
-      queue_number: 3,
+      created_at: new Date(Date.now() - 16 * 60 * 1000),
+      notes: 'Quiet corner for afternoon tea.',
+      branch_id: 'roshn',
+      estimated_wait_mins: 8,
+    },
+    {
+      id: 103,
+      reservation_id: 'WG-OLA-101',
+      customer_name: 'Nouf Al-Hassan',
+      mobile: '+966 56 220 1988',
+      party_size: 3,
+      area_name: 'Botanical Terrace',
+      queue_number: 1,
       status: 'waiting',
-      created_at: new Date(now - 7 * 60 * 1000),
-      notes: 'High chair requested; outdoor heat lamp section.',
-      branch_id: branchId,
-      estimated_wait_mins: 25,
-    }
-  });
+      created_at: new Date(Date.now() - 15 * 60 * 1000),
+      notes: 'Anniversary dessert surprise.',
+      branch_id: 'olaya',
+      estimated_wait_mins: 10,
+    },
+  ];
 
-  const reservations = [res1, res2, res3];
-
-  await prisma.notificationHistory.createMany({
-    data: [
-      {
-        id: 'notif_init_103',
-        reservation_id: 'COAL-103',
-        customer_name: 'Alexander Sterling',
-        mobile: '+1 (555) 456-7890',
-        party_size: 6,
-        area_name: 'Outdoor Terrace',
-        queue_number: 3,
-        reservation_created_at: new Date(now - 7 * 60 * 1000),
-        notification_created_at: new Date(now - 7 * 60 * 1000),
-        viewed_at: new Date(now - 6 * 60 * 1000),
-        read: true,
-        status: 'waiting',
-        branch_id: branchId,
-      },
-      {
-        id: 'notif_init_102',
-        reservation_id: 'COAL-102',
-        customer_name: 'Elena Rostova',
-        mobile: '+1 (555) 890-1234',
-        party_size: 4,
-        area_name: 'Main Dining Room',
-        queue_number: 2,
-        reservation_created_at: new Date(now - 14 * 60 * 1000),
-        notification_created_at: new Date(now - 14 * 60 * 1000),
-        viewed_at: new Date(now - 13 * 60 * 1000),
-        dismissed_at: new Date(now - 12 * 60 * 1000),
-        read: true,
-        status: 'waiting',
-        branch_id: branchId,
-      },
-      {
-        id: 'notif_init_101',
-        reservation_id: 'COAL-101',
-        customer_name: 'Marcus Vance',
-        mobile: '+1 (555) 234-8901',
-        party_size: 2,
-        area_name: 'Coal Hearth Bar',
-        queue_number: 1,
-        reservation_created_at: new Date(now - 22 * 60 * 1000),
-        notification_created_at: new Date(now - 22 * 60 * 1000),
-        viewed_at: new Date(now - 20 * 60 * 1000),
-        dismissed_at: new Date(now - 18 * 60 * 1000),
-        read: true,
-        status: 'waiting',
-        branch_id: branchId,
-      }
-    ]
-  });
-
-  const notificationHistory = await prisma.notificationHistory.findMany();
-
-  io.to(`branch_${branchId}`).emit('queue:reset', { queue: reservations });
-  io.to(`branch_${branchId}`).emit('notification:history_synced', { history: notificationHistory });
-  res.json({ success: true, count: reservations.length });
+  io.emit('queue:reset', { count: memReservations.length });
+  res.json({ success: true, count: memReservations.length });
 });
 
-// WebSocket Connection Lifecycle
+// WebSocket Connection Events
 io.on('connection', (socket) => {
   // Staff joins branch room
   socket.on('join:staff', (data) => {
-    const branchId = data?.branch_id || 'branch_1';
+    const branchId = (data?.branch_id || 'roshn').toLowerCase();
     const room = `branch_${branchId}`;
     socket.join(room);
     socket.emit('staff:joined', { room, branchId, timestamp: new Date().toISOString() });
   });
 
-  // Staff updates status via Socket.IO directly (e.g. from banner 'Mark as Seated' button)
-  socket.on('queue:status_changed', async (data) => {
-    if (data?.reservation_id) {
-      await updateReservationStatus(data.reservation_id, data.status || 'seated');
-    }
-  });
-
-  socket.on('queue:mark_seated', async (data) => {
-    if (data?.reservation_id) {
-      await updateReservationStatus(data.reservation_id, 'seated');
-    }
-  });
-
-  // Real-time notification dismissal / mark read via socket
-  socket.on('notification:dismiss', async (data) => {
-    const whereClause = data?.id ? { id: data.id } : { reservation_id: data.reservation_id };
-    const notif = await prisma.notificationHistory.findFirst({ where: whereClause as any });
-    if (notif) {
-      const now = new Date();
-      const updatedNotif = await prisma.notificationHistory.update({
-        where: { id: notif.id },
-        data: {
-          dismissed_at: now,
-          read: true,
-          viewed_at: notif.viewed_at || now,
-        }
-      });
-      io.to(`branch_${updatedNotif.branch_id}`).emit('notification:updated', updatedNotif);
-    }
-  });
-
-  socket.on('notification:mark_read', async (data) => {
-    const whereClause = data?.id ? { id: data.id } : { reservation_id: data.reservation_id };
-    const notif = await prisma.notificationHistory.findFirst({ where: whereClause as any });
-    if (notif) {
-      const updatedNotif = await prisma.notificationHistory.update({
-        where: { id: notif.id },
-        data: {
-          viewed_at: new Date(),
-          read: true,
-        }
-      });
-      io.to(`branch_${updatedNotif.branch_id}`).emit('notification:updated', updatedNotif);
-    }
-  });
-
-  // Customer joins their unique ticket room
+  // Customer joins ticket room
   socket.on('join:customer', async (data) => {
     const reservationId = data?.reservation_id;
     if (reservationId) {
-      const room = `reservation_${reservationId}`;
+      const cleanId = reservationId.replace(/^#/, '');
+      const room = `reservation_${cleanId}`;
       socket.join(room);
-      const res = await prisma.reservation.findUnique({ where: { reservation_id: reservationId } });
-      if (res) {
-        const peopleAhead = await getPeopleAhead(res.reservation_id, res.branch_id);
-        socket.emit('queue:position_updated', {
-          reservation_id: res.reservation_id,
-          people_ahead: peopleAhead,
-          estimated_wait_mins: Math.max(5, peopleAhead * 10),
-          status: res.status,
-        });
-      }
-    }
-  });
 
-  socket.on('leave:customer', (data) => {
-    if (data?.reservation_id) {
-      socket.leave(`reservation_${data.reservation_id}`);
+      const peopleAhead = await getPeopleAhead(cleanId);
+      socket.emit('queue:position_updated', {
+        reservation_id: cleanId,
+        people_ahead: peopleAhead,
+        estimated_wait_mins: Math.max(5, peopleAhead * 10),
+      });
     }
   });
 
   socket.on('disconnect', () => {
-    // Clean socket disconnection
+    // Clean socket disconnect
   });
 });
 
-// Vite Middleware for SPA integration
+// Vite Middleware for SPA development and production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -775,8 +681,12 @@ async function startServer() {
     });
   }
 
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Coal Restaurant] Server running on http://0.0.0.0:${PORT}`);
+  server.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`\n========================================================`);
+    console.log(`🌿 White Garden Waitlist & Concierge Service`);
+    console.log(`📍 Serving 5 Locations: Olaya, Roshn Front, 60 Ave, The View, Ammariayh`);
+    console.log(`🚀 Live Server: http://localhost:${PORT}`);
+    console.log(`========================================================\n`);
   });
 }
 

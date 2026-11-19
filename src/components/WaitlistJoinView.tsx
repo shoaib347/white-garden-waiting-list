@@ -1,0 +1,467 @@
+import { useState, type FormEvent } from 'react';
+import {
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Minus,
+  Phone,
+  Plus,
+  Sparkles,
+  Users,
+} from 'lucide-react';
+import {
+  COPY,
+  SEATING_AREAS,
+  SPECIAL_REQUEST_OPTIONS,
+  type Language,
+} from '../data/whiteGardenData';
+import {
+  getBranchLiveSummary,
+  validateSaudiPhone,
+  type BranchId,
+  type BranchInfo,
+  type SeatingAreaId,
+  type SpecialRequestId,
+  type WaitlistEntry,
+} from '../utils/waitlistLogic';
+
+interface WaitlistJoinViewProps {
+  lang: Language;
+  branches: BranchInfo[];
+  selectedBranchId: BranchId;
+  onSelectBranch: (id: BranchId) => void;
+  entries: WaitlistEntry[];
+  onJoinWaitlist: (input: {
+    branchId: BranchId;
+    guestName: string;
+    phone: string;
+    partySize: number;
+    seatingArea: SeatingAreaId;
+    specialRequests: SpecialRequestId[];
+    notes: string;
+  }) => void;
+  onOpenMap?: () => void;
+}
+
+export function WaitlistJoinView({
+  lang,
+  branches,
+  selectedBranchId,
+  onSelectBranch,
+  entries,
+  onJoinWaitlist,
+  onOpenMap,
+}: WaitlistJoinViewProps) {
+  const t = COPY[lang];
+  const [guestName, setGuestName] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [partySize, setPartySize] = useState(2);
+  const [seatingArea, setSeatingArea] = useState<SeatingAreaId>('terrace');
+  const [specialRequests, setSpecialRequests] = useState<SpecialRequestId[]>([]);
+  const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [branchImgFailed, setBranchImgFailed] = useState<Record<string, boolean>>({});
+
+  const activeBranch = branches.find((b) => b.id === selectedBranchId) ?? branches[1];
+  const activeSummary = getBranchLiveSummary(entries, activeBranch);
+
+  const toggleSpecialRequest = (id: SpecialRequestId) => {
+    setSpecialRequests((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!activeBranch.isOpen || isSubmitting) return;
+
+    const nextErrors: { name?: string; phone?: string } = {};
+    const trimmedName = guestName.trim();
+    if (!trimmedName) {
+      nextErrors.name = t.errNameRequired;
+    }
+
+    const phoneResult = validateSaudiPhone(phoneInput);
+    if (!phoneResult.valid) {
+      nextErrors.phone =
+        phoneResult.errorKey === 'empty' ? t.errPhoneEmpty : t.errPhoneInvalid;
+    }
+
+    if (nextErrors.name || nextErrors.phone) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
+    setIsSubmitting(true);
+
+    window.setTimeout(() => {
+      onJoinWaitlist({
+        branchId: activeBranch.id,
+        guestName: trimmedName,
+        phone: phoneResult.display,
+        partySize,
+        seatingArea,
+        specialRequests,
+        notes: notes.trim(),
+      });
+      setIsSubmitting(false);
+    }, 420);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      {/* Main 2-Column Interactive Waitlist Workspace */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: 5 Branches Selector */}
+        <div className="lg:col-span-6 space-y-5">
+          <div className="flex items-end justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
+                {t.selectBranchHeading}
+              </h1>
+              <p className="text-sm text-[#081C15]/65">{t.selectBranchSub}</p>
+            </div>
+            {onOpenMap && (
+              <button
+                type="button"
+                onClick={onOpenMap}
+                className="text-xs sm:text-sm font-semibold text-[#1B4332] hover:text-[#081C15] underline decoration-[#C5A059] underline-offset-4 whitespace-nowrap shrink-0 pb-1 cursor-pointer"
+              >
+                {t.mapViewDetails}
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3" role="radiogroup" aria-label={t.selectBranchHeading}>
+            {branches.map((branch) => {
+              const summary = getBranchLiveSummary(entries, branch);
+              const isSelected = branch.id === activeBranch.id;
+              const showThumb = branch.imageUrl && !branchImgFailed[branch.id];
+
+              return (
+                <button
+                  key={branch.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => onSelectBranch(branch.id)}
+                  className={`w-full text-start p-4 sm:p-5 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    isSelected
+                      ? 'bg-white border-[#1B4332] shadow-sm'
+                      : 'bg-white/75 border-[#1B4332]/12 hover:bg-white hover:border-[#1B4332]/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    {showThumb ? (
+                      <img
+                        src={branch.imageUrl}
+                        alt={lang === 'ar' ? branch.nameAr : branch.nameEn}
+                        referrerPolicy="no-referrer"
+                        onError={() =>
+                          setBranchImgFailed((prev) => ({ ...prev, [branch.id]: true }))
+                        }
+                        className="w-16 h-16 rounded-xl object-cover shrink-0 border border-[#1B4332]/10"
+                      />
+                    ) : (
+                      <div
+                        className={`w-16 h-16 rounded-xl shrink-0 flex items-center justify-center border ${
+                          isSelected
+                            ? 'bg-[#1B4332] text-[#D8F3DC] border-[#1B4332]'
+                            : 'bg-[#F2F6F3] text-[#2D6A4F] border-[#1B4332]/10'
+                        }`}
+                      >
+                        <MapPin className="w-5 h-5" aria-hidden="true" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-xl font-semibold text-[#081C15] truncate">
+                          {lang === 'ar' ? branch.nameAr : branch.nameEn}
+                        </span>
+                        {isSelected && (
+                          <CheckCircle2
+                            className="w-4 h-4 text-[#1B4332] shrink-0"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-[#081C15]/65 truncate">
+                        {lang === 'ar' ? branch.districtAr : branch.districtEn}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs tabular-nums">
+                        {branch.isOpen ? (
+                          <>
+                            <span className="font-semibold text-[#1B4332]">
+                              {t.waitMins(summary.nextWaitMinutes)}
+                            </span>
+                            <span aria-hidden="true" className="text-[#C5A059]">
+                              ·
+                            </span>
+                            <span className="text-[#081C15]/70">
+                              {t.partiesAhead(summary.waitingCount)}
+                            </span>
+                            <span aria-hidden="true" className="text-[#C5A059]">
+                              ·
+                            </span>
+                            <span className="text-[#2D6A4F] font-medium">{t.openStatus}</span>
+                          </>
+                        ) : (
+                          <span className="text-amber-800 font-medium">{t.closedStatus}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Column: Guest Waitlist Form */}
+        <div className="lg:col-span-6">
+          <div className="bg-white/90 backdrop-blur-md border border-[#1B4332]/15 rounded-2xl p-6 sm:p-8 shadow-sm">
+            <div className="pb-5 mb-6 border-b border-[#1B4332]/10 flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
+                  {t.joinFormHeading}
+                </h2>
+                <p className="text-sm text-[#081C15]/65">{t.joinFormSub}</p>
+              </div>
+              <div className="text-end shrink-0">
+                <p className="text-xs text-[#081C15]/60">
+                  {lang === 'ar' ? activeBranch.nameAr : activeBranch.nameEn}
+                </p>
+                <p className="text-sm font-semibold text-[#1B4332] tabular-nums">
+                  {activeBranch.isOpen
+                    ? t.waitMins(activeSummary.nextWaitMinutes)
+                    : t.closedStatus}
+                </p>
+              </div>
+            </div>
+
+            {!activeBranch.isOpen && (
+              <div
+                role="alert"
+                className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm"
+              >
+                {t.waitlistClosedNotice}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {/* Full Name */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="guest-full-name"
+                  className="block text-sm font-medium text-[#081C15]"
+                >
+                  {t.fullNameLabel}
+                </label>
+                <input
+                  id="guest-full-name"
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => {
+                    setGuestName(e.target.value);
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                  }}
+                  placeholder={t.fullNamePlaceholder}
+                  aria-invalid={Boolean(errors.name)}
+                  className={`w-full px-4 py-3 rounded-xl bg-[#FBFBFB] border text-sm text-[#081C15] placeholder:text-[#081C15]/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    errors.name ? 'border-red-600' : 'border-[#1B4332]/20 hover:border-[#1B4332]/40'
+                  }`}
+                />
+                {errors.name && (
+                  <p role="alert" className="text-xs text-red-700 font-medium">
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Saudi Mobile Number */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="guest-phone"
+                  className="block text-sm font-medium text-[#081C15]"
+                >
+                  {t.phoneLabel}
+                </label>
+                <div className="flex items-stretch" dir="ltr">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 rounded-s-xl bg-[#F2F6F3] border border-e-0 border-[#1B4332]/20 text-sm font-semibold text-[#1B4332] tabular-nums select-none">
+                    <Phone className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
+                    +966
+                  </span>
+                  <input
+                    id="guest-phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={phoneInput}
+                    onChange={(e) => {
+                      setPhoneInput(e.target.value);
+                      if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+                    }}
+                    placeholder={t.phonePlaceholder}
+                    aria-invalid={Boolean(errors.phone)}
+                    className={`w-full px-4 py-3 rounded-e-xl bg-[#FBFBFB] border text-sm text-[#081C15] tabular-nums placeholder:text-[#081C15]/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                      errors.phone
+                        ? 'border-red-600'
+                        : 'border-[#1B4332]/20 hover:border-[#1B4332]/40'
+                    }`}
+                  />
+                </div>
+                {errors.phone ? (
+                  <p role="alert" className="text-xs text-red-700 font-medium">
+                    {errors.phone}
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#081C15]/55">{t.phoneHint}</p>
+                )}
+              </div>
+
+              {/* Party Size Stepper */}
+              <div className="space-y-2">
+                <span className="block text-sm font-medium text-[#081C15]">
+                  {t.partySizeLabel}
+                </span>
+                <div className="flex items-center justify-between p-2 rounded-xl bg-[#F7F9F6] border border-[#1B4332]/15">
+                  <button
+                    type="button"
+                    aria-label="Decrease party size"
+                    onClick={() => setPartySize((prev) => Math.max(1, prev - 1))}
+                    disabled={partySize <= 1}
+                    className="w-11 h-11 rounded-lg bg-white border border-[#1B4332]/15 flex items-center justify-center text-[#1B4332] hover:bg-[#D8F3DC]/40 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                  >
+                    <Minus className="w-4 h-4" aria-hidden="true" />
+                  </button>
+
+                  <div className="flex items-center gap-2.5 text-[#081C15] font-semibold tabular-nums">
+                    <Users className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+                    <span className="text-base">{t.guestsLabel(partySize)}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="Increase party size"
+                    onClick={() => setPartySize((prev) => Math.min(10, prev + 1))}
+                    disabled={partySize >= 10}
+                    className="w-11 h-11 rounded-lg bg-white border border-[#1B4332]/15 flex items-center justify-center text-[#1B4332] hover:bg-[#D8F3DC]/40 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                  >
+                    <Plus className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Seating Area */}
+              <div className="space-y-2">
+                <span className="block text-sm font-medium text-[#081C15]">
+                  {t.seatingAreaLabel}
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {SEATING_AREAS.map((area) => {
+                    const active = seatingArea === area.id;
+                    return (
+                      <button
+                        key={area.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setSeatingArea(area.id)}
+                        className={`p-3.5 rounded-xl border text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                          active
+                            ? 'bg-[#1B4332] text-white border-[#1B4332]'
+                            : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
+                        }`}
+                      >
+                        <p className="text-xs sm:text-sm font-semibold leading-snug">
+                          {lang === 'ar' ? area.labelAr : area.labelEn}
+                        </p>
+                        <p
+                          className={`text-[11px] mt-1 leading-snug ${
+                            active ? 'text-[#D8F3DC]' : 'text-[#081C15]/60'
+                          }`}
+                        >
+                          {lang === 'ar' ? area.descAr : area.descEn}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Celebrations & Special Requests */}
+              <div className="space-y-2">
+                <span className="block text-sm font-medium text-[#081C15]">
+                  {t.specialRequestsLabel}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {SPECIAL_REQUEST_OPTIONS.map((req) => {
+                    const selected = specialRequests.includes(req.id);
+                    return (
+                      <button
+                        key={req.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => toggleSpecialRequest(req.id)}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-xl border text-xs sm:text-sm font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                          selected
+                            ? 'bg-[#D8F3DC]/70 border-[#1B4332] text-[#081C15]'
+                            : 'bg-[#FBFBFB] border-[#1B4332]/15 text-[#081C15]/80 hover:border-[#1B4332]/35'
+                        }`}
+                      >
+                        <Sparkles
+                          className={`w-3.5 h-3.5 ${
+                            selected ? 'text-[#1B4332]' : 'text-[#C5A059]'
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span>{lang === 'ar' ? req.labelAr : req.labelEn}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Optional Notes */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="guest-notes"
+                  className="block text-sm font-medium text-[#081C15]"
+                >
+                  {t.notesLabel}
+                </label>
+                <input
+                  id="guest-notes"
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t.notesPlaceholder}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#FBFBFB] border border-[#1B4332]/20 text-sm text-[#081C15] placeholder:text-[#081C15]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                />
+              </div>
+
+              {/* Primary Submit CTA */}
+              <button
+                type="submit"
+                disabled={!activeBranch.isOpen || isSubmitting}
+                className="w-full py-3.5 px-6 min-h-[48px] rounded-xl bg-[#1B4332] hover:bg-[#081C15] disabled:bg-[#1B4332]/40 text-white font-semibold text-sm sm:text-base transition-all duration-150 flex items-center justify-center gap-2.5 shadow-sm hover:shadow cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Clock className="w-4 h-4 animate-spin" aria-hidden="true" />
+                    <span>{t.joiningButton}</span>
+                  </>
+                ) : (
+                  <span>{t.joinButton}</span>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
