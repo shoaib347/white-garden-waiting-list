@@ -70,12 +70,14 @@ export function Header({
         <button
           type="button"
           onClick={() => onSelectView('join')}
-          className="flex items-center gap-2.5 text-[#1B4332] hover:text-[#081C15] transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded-md px-1 py-1"
+          aria-label="White Garden — وايت قاردن"
+          className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded-xl hover:opacity-90 transition-all shrink-0 py-1"
         >
-          <BotanicalEmblem className="w-6 h-6 shrink-0 text-[#1B4332]" />
-          <span className="font-display text-xl sm:text-2xl font-semibold tracking-tight whitespace-nowrap">
-            {t.brandName}
-          </span>
+          <img
+            src="/white-garden-logo.svg"
+            alt="White Garden — وايت قاردن"
+            className="h-9 sm:h-11 w-auto rounded-lg shadow-sm object-contain"
+          />
         </button>
 
         {/* Zone 2: Desktop Mode Switcher Tabs */}
