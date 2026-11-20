@@ -479,8 +479,8 @@ export default function App() {
       if (audioEnabled) playHospitalityChime();
       showToast(
         lang === 'ar'
-          ? `تم نداء ${target.guestName} (${target.ticketCode}) وإرسال تنبيه واتساب/SMS`
-          : `Calling ${target.guestName} (${target.ticketCode}) — SMS & WhatsApp alert sent`,
+          ? `تم نداء ${target.guestName} (${target.ticketCode}) — تم إرسال تنبيه جاهزية الطاولة للتذكرة`
+          : `Calling ${target.guestName} (${target.ticketCode}) — Table ready alert sent to live ticket`,
         'chime',
       );
     } else if (action === 'seat') {

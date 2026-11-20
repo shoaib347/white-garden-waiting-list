@@ -287,8 +287,8 @@ export function transitionTicket(
           {
             id: `evt-${now}-call`,
             timestamp: now,
-            messageEn: 'Table ready notification sent via SMS & WhatsApp.',
-            messageAr: 'تم إرسال إشعار جاهزية الطاولة عبر الرسائل والواتساب.',
+            messageEn: 'Table ready alert sent to live ticket tracker.',
+            messageAr: 'تم إرسال إشعار جاهزية الطاولة لشاشة التذكرة المباشرة.',
           },
           ...entry.events,
         ],
