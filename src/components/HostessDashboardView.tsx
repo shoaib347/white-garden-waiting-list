@@ -162,7 +162,7 @@ export function HostessDashboardView({
     onAddWalkin({
       branchId: walkinBranch,
       guestName: trimmed,
-      phone: walkinPhone.trim() || 'Walk-in Guest',
+      phone: walkinPhone.trim() || (lang === 'ar' ? 'تسجيل مباشر' : 'Walk-in Guest'),
       partySize: walkinParty,
       seatingArea: walkinArea,
     });

@@ -224,6 +224,22 @@ export default function App() {
         if (prev.some((e) => e.ticketCode.toLowerCase() === newEntry.ticketCode.toLowerCase())) {
           return prev;
         }
+        // Reconcile with local pending optimistic entry if matching same customer and branch within 30s
+        const optimisticIdx = prev.findIndex(
+          (e) =>
+            e.guestName.toLowerCase() === newEntry.guestName.toLowerCase() &&
+            e.branchId === newEntry.branchId &&
+            Math.abs(Date.now() - e.createdAt) < 30000,
+        );
+        if (optimisticIdx !== -1) {
+          const updated = [...prev];
+          updated[optimisticIdx] = {
+            ...updated[optimisticIdx],
+            id: newEntry.id,
+            ticketCode: newEntry.ticketCode,
+          };
+          return updated;
+        }
         return [newEntry, ...prev];
       });
 
@@ -387,9 +403,16 @@ export default function App() {
             ? data.reservation.reservation_id
             : `#${data.reservation.reservation_id}`;
 
-          setEntries((prev) =>
-            prev.map((e) => (e.id === newId ? { ...e, ticketCode: confirmedCode } : e))
-          );
+          setEntries((prev) => {
+            const hasConfirmed = prev.find(
+              (e) => e.ticketCode.toLowerCase() === confirmedCode.toLowerCase(),
+            );
+            if (hasConfirmed) {
+              return prev.filter((e) => e.id === hasConfirmed.id || e.id !== newId);
+            }
+            return prev.map((e) => (e.id === newId ? { ...e, ticketCode: confirmedCode } : e));
+          });
+          window.history.replaceState(null, '', `/ticket/${encodeURIComponent(confirmedCode.replace(/^#/, ''))}`);
         }
       }
     } catch (e) {
@@ -446,7 +469,7 @@ export default function App() {
 
     // Persist walk-in to backend
     try {
-      await fetch('/api/v1/create', {
+      const res = await fetch('/api/v1/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -459,6 +482,23 @@ export default function App() {
           is_walkin: true,
         }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.reservation?.reservation_id) {
+          const confirmedCode = data.reservation.reservation_id.startsWith('#')
+            ? data.reservation.reservation_id
+            : `#${data.reservation.reservation_id}`;
+          setEntries((prev) => {
+            const hasConfirmed = prev.find(
+              (e) => e.ticketCode.toLowerCase() === confirmedCode.toLowerCase(),
+            );
+            if (hasConfirmed) {
+              return prev.filter((e) => e.id === hasConfirmed.id || e.id !== newId);
+            }
+            return prev.map((e) => (e.id === newId ? { ...e, ticketCode: confirmedCode } : e));
+          });
+        }
+      }
     } catch (e) {
       // Handled gracefully
     }
