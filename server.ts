@@ -55,80 +55,8 @@ interface MemReservation {
   seated_at?: Date | null;
 }
 
-let memCounter = 120;
-let memReservations: MemReservation[] = [
-  {
-    id: 101,
-    reservation_id: 'WG-ROSHN-101',
-    customer_name: 'Faisal Al-Harbi',
-    mobile: '+966 50 412 8890',
-    party_size: 4,
-    area_name: 'Botanical Terrace',
-    queue_number: 1,
-    status: 'ready',
-    created_at: new Date(Date.now() - 22 * 60 * 1000),
-    notified_at: new Date(Date.now() - 90 * 1000),
-    notes: 'Signature patio seating requested.',
-    branch_id: 'roshn',
-    estimated_wait_mins: 0,
-  },
-  {
-    id: 102,
-    reservation_id: 'WG-ROSHN-102',
-    customer_name: 'Aljawhara Al-Saud',
-    mobile: '+966 55 839 2011',
-    party_size: 2,
-    area_name: 'Fountain Pergola',
-    queue_number: 2,
-    status: 'waiting',
-    created_at: new Date(Date.now() - 16 * 60 * 1000),
-    notes: 'Quiet corner for afternoon tea.',
-    branch_id: 'roshn',
-    estimated_wait_mins: 8,
-  },
-  {
-    id: 103,
-    reservation_id: 'WG-ROSHN-103',
-    customer_name: 'Tariq Al-Otaibi',
-    mobile: '+966 54 991 3042',
-    party_size: 6,
-    area_name: 'Indoor Floral Lounge',
-    queue_number: 3,
-    status: 'waiting',
-    created_at: new Date(Date.now() - 11 * 60 * 1000),
-    notes: 'Family gathering with high chair.',
-    branch_id: 'roshn',
-    estimated_wait_mins: 18,
-  },
-  {
-    id: 104,
-    reservation_id: 'WG-OLA-101',
-    customer_name: 'Nouf Al-Hassan',
-    mobile: '+966 56 220 1988',
-    party_size: 3,
-    area_name: 'Botanical Terrace',
-    queue_number: 1,
-    status: 'waiting',
-    created_at: new Date(Date.now() - 15 * 60 * 1000),
-    notes: 'Anniversary dessert surprise.',
-    branch_id: 'olaya',
-    estimated_wait_mins: 10,
-  },
-  {
-    id: 105,
-    reservation_id: 'WG-AMMR-101',
-    customer_name: 'Bandar Al-Khatib',
-    mobile: '+966 50 112 4477',
-    party_size: 5,
-    area_name: 'Outdoor Sanctuary',
-    queue_number: 1,
-    status: 'waiting',
-    created_at: new Date(Date.now() - 18 * 60 * 1000),
-    notes: 'Scenic valley view.',
-    branch_id: 'ammariayh',
-    estimated_wait_mins: 15,
-  },
-];
+let memCounter = 100;
+let memReservations: MemReservation[] = [];
 
 let memBranchSettings: Record<string, boolean> = {
   olaya: true,
@@ -581,56 +509,29 @@ app.post('/api/v1/settings', async (req, res) => {
   res.json(payload);
 });
 
-// Seed demo data
-app.post('/api/v1/seed', async (req, res) => {
-  memReservations = [
-    {
-      id: 101,
-      reservation_id: 'WG-ROSHN-101',
-      customer_name: 'Faisal Al-Harbi',
-      mobile: '+966 50 412 8890',
-      party_size: 4,
-      area_name: 'Botanical Terrace',
-      queue_number: 1,
-      status: 'ready',
-      created_at: new Date(Date.now() - 22 * 60 * 1000),
-      notified_at: new Date(Date.now() - 90 * 1000),
-      notes: 'Signature patio seating requested.',
-      branch_id: 'roshn',
-      estimated_wait_mins: 0,
-    },
-    {
-      id: 102,
-      reservation_id: 'WG-ROSHN-102',
-      customer_name: 'Aljawhara Al-Saud',
-      mobile: '+966 55 839 2011',
-      party_size: 2,
-      area_name: 'Fountain Pergola',
-      queue_number: 2,
-      status: 'waiting',
-      created_at: new Date(Date.now() - 16 * 60 * 1000),
-      notes: 'Quiet corner for afternoon tea.',
-      branch_id: 'roshn',
-      estimated_wait_mins: 8,
-    },
-    {
-      id: 103,
-      reservation_id: 'WG-OLA-101',
-      customer_name: 'Nouf Al-Hassan',
-      mobile: '+966 56 220 1988',
-      party_size: 3,
-      area_name: 'Botanical Terrace',
-      queue_number: 1,
-      status: 'waiting',
-      created_at: new Date(Date.now() - 15 * 60 * 1000),
-      notes: 'Anniversary dessert surprise.',
-      branch_id: 'olaya',
-      estimated_wait_mins: 10,
-    },
-  ];
+// Clear / Reset Queue
+app.post('/api/v1/queue/clear', async (req, res) => {
+  memReservations = [];
+  if (isPrismaAvailable) {
+    try {
+      await prisma.notificationHistory.deleteMany();
+      await prisma.reservation.deleteMany();
+    } catch (e) {}
+  }
+  io.emit('queue:reset', { count: 0 });
+  res.json({ success: true, count: 0 });
+});
 
-  io.emit('queue:reset', { count: memReservations.length });
-  res.json({ success: true, count: memReservations.length });
+app.post('/api/v1/seed', async (req, res) => {
+  memReservations = [];
+  if (isPrismaAvailable) {
+    try {
+      await prisma.notificationHistory.deleteMany();
+      await prisma.reservation.deleteMany();
+    } catch (e) {}
+  }
+  io.emit('queue:reset', { count: 0 });
+  res.json({ success: true, count: 0 });
 });
 
 // WebSocket Connection Events
