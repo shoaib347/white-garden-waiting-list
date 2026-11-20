@@ -55,7 +55,6 @@ export function Header({
 
   const tabs: { id: ActiveView; label: string }[] = [
     { id: 'join', label: t.navJoin },
-    { id: 'map', label: t.navMap },
     { id: 'ticket', label: t.navTicket },
     { id: 'hostess', label: t.navHostess },
   ];

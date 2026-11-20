@@ -577,7 +577,6 @@ export default function App() {
             onSelectBranch={(id) => setSelectedBranch(id)}
             entries={entries}
             onJoinWaitlist={handleJoinWaitlist}
-            onOpenMap={() => navigateToView('map')}
           />
         )}
 
