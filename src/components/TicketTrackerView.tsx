@@ -351,25 +351,14 @@ export function TicketTrackerView({
               {/* Quick Actions */}
               {(ticket.status === 'waiting' || ticket.status === 'called') && (
                 <div className="pt-4 border-t border-[#1B4332]/10 space-y-2.5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => onTicketAction(ticket.id, 'extend_5m')}
-                      className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[#F7F9F6] hover:bg-[#D8F3DC]/50 border border-[#1B4332]/20 text-[#1B4332] text-xs sm:text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
-                    >
-                      <Timer className="w-4 h-4 text-[#C5A059] shrink-0" aria-hidden="true" />
-                      <span>{t.btnNeed5Min}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => onTicketAction(ticket.id, 'notify_hostess')}
-                      className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[#1B4332] hover:bg-[#081C15] text-white text-xs sm:text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
-                    >
-                      <BellRing className="w-4 h-4 text-[#C5A059] shrink-0" aria-hidden="true" />
-                      <span>{t.btnNotifyHostess}</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onTicketAction(ticket.id, 'extend_5m')}
+                    className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[#F7F9F6] hover:bg-[#D8F3DC]/50 border border-[#1B4332]/20 text-[#1B4332] text-xs sm:text-sm font-medium inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                  >
+                    <Timer className="w-4 h-4 text-[#C5A059] shrink-0" aria-hidden="true" />
+                    <span>{t.btnNeed5Min}</span>
+                  </button>
 
                   {!confirmCancel ? (
                     <button
