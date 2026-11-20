@@ -277,7 +277,7 @@ export function transitionTicket(
     }
 
     if (action === 'call') {
-      const holdMs = 5 * 60 * 1000;
+      const holdMs = 10 * 60 * 1000;
       return {
         ...entry,
         status: 'called',

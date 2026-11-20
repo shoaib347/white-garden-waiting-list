@@ -107,7 +107,7 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
     createdAt: createdMs,
     calledAt: calledMs,
     seatedAt: seatedMs,
-    holdExpiresAt: calledMs ? calledMs + 5 * 60 * 1000 : undefined,
+    holdExpiresAt: calledMs ? calledMs + 10 * 60 * 1000 : undefined,
     events: [
       {
         id: `evt-${r.reservation_id}`,
@@ -272,7 +272,7 @@ export default function App() {
               status: nextStatus,
               calledAt: payload.notified_at ? new Date(payload.notified_at).getTime() : e.calledAt,
               seatedAt: payload.seated_at ? new Date(payload.seated_at).getTime() : e.seatedAt,
-              holdExpiresAt: payload.notified_at ? new Date(payload.notified_at).getTime() + 5 * 60 * 1000 : e.holdExpiresAt,
+              holdExpiresAt: payload.notified_at ? new Date(payload.notified_at).getTime() + 10 * 60 * 1000 : e.holdExpiresAt,
             };
           }
           return e;
