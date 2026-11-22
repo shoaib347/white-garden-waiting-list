@@ -183,7 +183,7 @@ export function WaitlistJoinView({
             )}
           </div>
 
-          <div className="space-y-3" role="radiogroup" aria-label={t.selectBranchHeading}>
+          <div className="space-y-2" role="radiogroup" aria-label={t.selectBranchHeading}>
             {branches.map((branch) => {
               const summary = getBranchLiveSummary(entries, branch);
               const isSelected = branch.id === activeBranch.id;
@@ -196,13 +196,13 @@ export function WaitlistJoinView({
                   role="radio"
                   aria-checked={isSelected}
                   onClick={() => onSelectBranch(branch.id)}
-                  className={`w-full text-start p-4 sm:p-5 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                  className={`w-full text-start p-2.5 sm:p-3 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                     isSelected
                       ? 'bg-white border-[#1B4332] shadow-sm'
                       : 'bg-white/75 border-[#1B4332]/12 hover:bg-white hover:border-[#1B4332]/30'
                   }`}
                 >
-                  <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
                     {showThumb ? (
                       <img
                         src={branch.imageUrl}
@@ -211,23 +211,23 @@ export function WaitlistJoinView({
                         onError={() =>
                           setBranchImgFailed((prev) => ({ ...prev, [branch.id]: true }))
                         }
-                        className="w-16 h-16 rounded-xl object-cover shrink-0 border border-[#1B4332]/10"
+                        className="w-11 h-11 rounded-lg object-cover shrink-0 border border-[#1B4332]/10"
                       />
                     ) : (
                       <div
-                        className={`w-16 h-16 rounded-xl shrink-0 flex items-center justify-center border ${
+                        className={`w-11 h-11 rounded-lg shrink-0 flex items-center justify-center border ${
                           isSelected
                             ? 'bg-[#1B4332] text-[#D8F3DC] border-[#1B4332]'
                             : 'bg-[#F2F6F3] text-[#2D6A4F] border-[#1B4332]/10'
                         }`}
                       >
-                        <MapPin className="w-5 h-5" aria-hidden="true" />
+                        <MapPin className="w-4 h-4" aria-hidden="true" />
                       </div>
                     )}
 
-                    <div className="min-w-0 space-y-1">
+                    <div className="min-w-0 space-y-0.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-display text-xl font-semibold text-[#081C15] truncate">
+                        <span className="font-display text-base sm:text-lg font-semibold text-[#081C15] truncate leading-tight">
                           {lang === 'ar' ? branch.nameAr : branch.nameEn}
                         </span>
                         {isSelected && (
@@ -238,11 +238,11 @@ export function WaitlistJoinView({
                         )}
                       </div>
 
-                      <p className="text-xs sm:text-sm text-[#081C15]/65 truncate">
+                      <p className="text-[11px] sm:text-xs text-[#081C15]/65 truncate">
                         {lang === 'ar' ? branch.districtAr : branch.districtEn}
                       </p>
 
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs tabular-nums">
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] tabular-nums">
                         {branch.isOpen ? (
                           <>
                             <span className="font-semibold text-[#1B4332]">
@@ -286,7 +286,7 @@ export function WaitlistJoinView({
               setStep('form');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="w-full min-h-[50px] px-6 py-3.5 rounded-xl bg-[#1B4332] hover:bg-[#081C15] disabled:bg-neutral-300 disabled:text-neutral-600 text-white text-sm sm:text-base font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            className="w-full min-h-[42px] px-5 py-2.5 rounded-xl bg-[#1B4332] hover:bg-[#081C15] disabled:bg-neutral-300 disabled:text-neutral-600 text-white text-sm sm:text-base font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
           >
             <span>
               {lang === 'ar'
