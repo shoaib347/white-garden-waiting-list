@@ -8,6 +8,7 @@ import {
   Minus,
   Phone,
   Plus,
+  QrCode,
   Search,
   Sparkles,
   UserPlus,
@@ -34,6 +35,7 @@ import {
 } from '../utils/waitlistLogic';
 import type { StaffAuthSession } from './StaffLoginView';
 import { GuestHistoryModal } from './GuestHistoryModal';
+import { BranchQrModal } from './BranchQrModal';
 
 interface HostessDashboardViewProps {
   lang: Language;
@@ -79,6 +81,7 @@ export function HostessDashboardView({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [walkinOpen, setWalkinOpen] = useState(false);
   const [historyGuest, setHistoryGuest] = useState<WaitlistEntry | null>(null);
+  const [qrOpen, setQrOpen] = useState(false);
 
   // Walk-in modal form state
   const defaultWalkinBranch: BranchId =
@@ -371,6 +374,17 @@ export function HostessDashboardView({
               <VolumeX className="w-4 h-4" aria-hidden="true" />
             )}
             <span>{audioEnabled ? t.audioChimeOn : t.audioChimeOff}</span>
+          </button>
+
+          {/* Walk-in QR Code Standee Button */}
+          <button
+            type="button"
+            onClick={() => setQrOpen(true)}
+            title={lang === 'ar' ? 'عرض وطباعة رمز QR للفرع' : 'View & print branch walk-in QR code'}
+            className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B4332]/20 bg-white hover:bg-[#F7F9F6] text-[#1B4332] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+          >
+            <QrCode className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            <span>{lang === 'ar' ? 'رمز QR للفرع' : 'Branch QR'}</span>
           </button>
 
           {/* Export CSV / Excel Download */}
@@ -975,6 +989,17 @@ export function HostessDashboardView({
           </div>
         </div>
       )}
+      {/* Branch Walk-in QR Code Modal */}
+      {qrOpen && (
+        <BranchQrModal
+          lang={lang}
+          branches={branches}
+          initialBranchId={selectedBranch === 'all' ? 'roshn' : selectedBranch}
+          allowBranchSwitch={staffUser?.role === 'admin' || selectedBranch === 'all'}
+          onClose={() => setQrOpen(false)}
+        />
+      )}
+
       {/* Guest Visit History Modal */}
       {historyGuest && (
         <GuestHistoryModal

@@ -188,7 +188,17 @@ export default function App() {
 
   const [branches, setBranches] = useState<BranchInfo[]>(INITIAL_BRANCHES);
   const [entries, setEntries] = useState<WaitlistEntry[]>(() => createInitialWaitlistEntries());
-  const [selectedBranch, setSelectedBranch] = useState<BranchId | 'all'>('roshn');
+  const [selectedBranch, setSelectedBranch] = useState<BranchId | 'all'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      const b = (p.get('branch') || '').trim().toLowerCase();
+      const validIds: BranchId[] = ['olaya', 'roshn', 'sixty', 'theview', 'ammariayh'];
+      if (validIds.includes(b as BranchId)) {
+        return b as BranchId;
+      }
+    }
+    return 'roshn';
+  });
   const [activeTicketId, setActiveTicketId] = useState<string>('wg-roshn-104');
   const [activeView, setActiveView] = useState<ActiveView>(() => {
     const initialEntries = createInitialWaitlistEntries();
