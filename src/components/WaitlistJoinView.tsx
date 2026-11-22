@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -88,6 +88,24 @@ export function WaitlistJoinView({
 
   const activeBranch = branches.find((b) => b.id === selectedBranchId) ?? branches[1];
   const activeSummary = getBranchLiveSummary(entries, activeBranch);
+
+  const handleBackToBranches = (e?: MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setStep('branch');
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {}
+    try {
+      const root = document.getElementById('root');
+      if (root) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {}
+    try {
+      window.parent?.postMessage({ type: 'wg-scroll-top' }, '*');
+    } catch {}
+  };
 
   const upcomingDays = useMemo(() => {
     const enWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -386,21 +404,20 @@ export function WaitlistJoinView({
       {/* Step 2: Guest Waitlist Form (shown after confirming location) */}
       {step === 'form' && (
         <section className="space-y-2.5">
-          <button
-            type="button"
-            onClick={() => {
-              setStep('branch');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#1B4332] hover:text-[#081C15] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded-md px-1 py-0.5"
-          >
-            {lang === 'ar' ? (
-              <ArrowRight className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
-            ) : (
-              <ArrowLeft className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
-            )}
-            <span>{lang === 'ar' ? 'تغيير الفرع' : 'Change Branch'}</span>
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={handleBackToBranches}
+              aria-label={lang === 'ar' ? 'تغيير الفرع والعودة لقائمة الفروع' : 'Change branch and return to branch list'}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-[#F2F6F3] border border-[#1B4332]/25 text-xs font-semibold text-[#1B4332] hover:text-[#081C15] shadow-2xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#C5A059] shrink-0" aria-hidden="true" />
+              <span>{lang === 'ar' ? 'تغيير الفرع' : 'Change Branch'}</span>
+              <span className="text-[10px] text-[#081C15]/50 font-normal">
+                ({lang === 'ar' ? activeBranch.nameAr : activeBranch.nameEn})
+              </span>
+            </button>
+          </div>
 
           <div className="bg-white/90 backdrop-blur-md border border-[#1B4332]/15 rounded-2xl p-4 sm:p-5 shadow-sm">
             <div className="pb-3 mb-4 border-b border-[#1B4332]/10 flex items-start justify-between gap-3">
@@ -410,16 +427,22 @@ export function WaitlistJoinView({
                 </h2>
                 {t.joinFormSub && <p className="text-sm text-[#081C15]/65">{t.joinFormSub}</p>}
               </div>
-              <div className="text-end shrink-0">
-                <p className="text-xs text-[#081C15]/60">
-                  {lang === 'ar' ? activeBranch.nameAr : activeBranch.nameEn}
+              <button
+                type="button"
+                onClick={handleBackToBranches}
+                className="text-end shrink-0 group cursor-pointer focus-visible:outline-none"
+                title={lang === 'ar' ? 'اضغط لتغيير الفرع' : 'Click to change branch'}
+              >
+                <p className="text-xs text-[#081C15]/75 group-hover:text-[#1B4332] font-medium flex items-center justify-end gap-1">
+                  <span>{lang === 'ar' ? activeBranch.nameAr : activeBranch.nameEn}</span>
+                  <span className="text-[10px] text-[#C5A059] group-hover:underline">({lang === 'ar' ? 'تغيير' : 'Change'})</span>
                 </p>
                 <p className="text-sm font-semibold text-[#1B4332] tabular-nums">
                   {activeBranch.isOpen
                     ? t.waitMins(activeSummary.nextWaitMinutes)
                     : t.closedStatus}
                 </p>
-              </div>
+              </button>
             </div>
 
             {!activeBranch.isOpen && (
