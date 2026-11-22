@@ -161,7 +161,7 @@ export function WaitlistJoinView({
   };
 
   return (
-    <div className="max-w-xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div className="max-w-md mx-auto px-4 py-4 sm:py-6">
       {/* Step 1: Select Destination & Confirm */}
       {step === 'branch' && (
         <section className="space-y-5">
@@ -183,7 +183,7 @@ export function WaitlistJoinView({
             )}
           </div>
 
-          <div className="space-y-2" role="radiogroup" aria-label={t.selectBranchHeading}>
+          <div className="space-y-1" role="radiogroup" aria-label={t.selectBranchHeading}>
             {branches.map((branch) => {
               const summary = getBranchLiveSummary(entries, branch);
               const isSelected = branch.id === activeBranch.id;
@@ -304,7 +304,7 @@ export function WaitlistJoinView({
 
       {/* Step 2: Guest Waitlist Form (shown after confirming location) */}
       {step === 'form' && (
-        <section className="space-y-4">
+        <section className="space-y-2.5">
           <button
             type="button"
             onClick={() => {
@@ -321,10 +321,10 @@ export function WaitlistJoinView({
             <span>{lang === 'ar' ? 'تغيير الفرع' : 'Change Branch'}</span>
           </button>
 
-          <div className="bg-white/90 backdrop-blur-md border border-[#1B4332]/15 rounded-2xl p-6 sm:p-8 shadow-sm">
-            <div className="pb-5 mb-6 border-b border-[#1B4332]/10 flex items-start justify-between gap-4">
+          <div className="bg-white/90 backdrop-blur-md border border-[#1B4332]/15 rounded-2xl p-4 sm:p-5 shadow-sm">
+            <div className="pb-3 mb-4 border-b border-[#1B4332]/10 flex items-start justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
+                <h2 className="font-display text-xl sm:text-2xl font-semibold text-[#081C15]">
                   {t.joinFormHeading}
                 </h2>
                 {t.joinFormSub && <p className="text-sm text-[#081C15]/65">{t.joinFormSub}</p>}
@@ -350,12 +350,12 @@ export function WaitlistJoinView({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+            <form onSubmit={handleSubmit} noValidate className="space-y-3.5">
               {/* Full Name */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label
                   htmlFor="guest-full-name"
-                  className="block text-sm font-medium text-[#081C15]"
+                  className="block text-xs font-medium text-[#081C15]"
                 >
                   {t.fullNameLabel}
                 </label>
@@ -369,7 +369,7 @@ export function WaitlistJoinView({
                   }}
                   placeholder={t.fullNamePlaceholder}
                   aria-invalid={Boolean(errors.name)}
-                  className={`w-full px-4 py-3 rounded-xl bg-[#FBFBFB] border text-sm text-[#081C15] placeholder:text-[#081C15]/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                  className={`w-full px-3 py-2 rounded-lg bg-[#FBFBFB] border text-xs text-[#081C15] placeholder:text-[#081C15]/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                     errors.name ? 'border-red-600' : 'border-[#1B4332]/20 hover:border-[#1B4332]/40'
                   }`}
                 />
@@ -381,15 +381,15 @@ export function WaitlistJoinView({
               </div>
 
               {/* Saudi Mobile Number */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label
                   htmlFor="guest-phone"
-                  className="block text-sm font-medium text-[#081C15]"
+                  className="block text-xs font-medium text-[#081C15]"
                 >
                   {t.phoneLabel}
                 </label>
                 <div className="flex items-stretch" dir="ltr">
-                  <span className="inline-flex items-center gap-1.5 px-3.5 rounded-s-xl bg-[#F2F6F3] border border-e-0 border-[#1B4332]/20 text-sm font-semibold text-[#1B4332] tabular-nums select-none">
+                  <span className="inline-flex items-center gap-1 px-2.5 rounded-s-lg bg-[#F2F6F3] border border-e-0 border-[#1B4332]/20 text-xs font-semibold text-[#1B4332] tabular-nums select-none">
                     <Phone className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
                     +966
                   </span>
@@ -404,7 +404,7 @@ export function WaitlistJoinView({
                     }}
                     placeholder={t.phonePlaceholder}
                     aria-invalid={Boolean(errors.phone)}
-                    className={`w-full px-4 py-3 rounded-e-xl bg-[#FBFBFB] border text-sm text-[#081C15] tabular-nums placeholder:text-[#081C15]/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    className={`w-full px-3 py-2 rounded-e-lg bg-[#FBFBFB] border text-xs text-[#081C15] tabular-nums placeholder:text-[#081C15]/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       errors.phone
                         ? 'border-red-600'
                         : 'border-[#1B4332]/20 hover:border-[#1B4332]/40'
@@ -416,29 +416,29 @@ export function WaitlistJoinView({
                     {errors.phone}
                   </p>
                 ) : (
-                  <p className="text-xs text-[#081C15]/55">{t.phoneHint}</p>
+                  <p className="text-[11px] text-[#081C15]/55">{t.phoneHint}</p>
                 )}
               </div>
 
               {/* Party Size Stepper */}
-              <div className="space-y-2">
-                <span className="block text-sm font-medium text-[#081C15]">
+              <div className="space-y-1">
+                <span className="block text-xs font-medium text-[#081C15]">
                   {t.partySizeLabel}
                 </span>
-                <div className="flex items-center justify-between p-2 rounded-xl bg-[#F7F9F6] border border-[#1B4332]/15">
+                <div className="flex items-center justify-between p-1 rounded-lg bg-[#F7F9F6] border border-[#1B4332]/15">
                   <button
                     type="button"
                     aria-label="Decrease party size"
                     onClick={() => setPartySize((prev) => Math.max(1, prev - 1))}
                     disabled={partySize <= 1}
-                    className="w-11 h-11 rounded-lg bg-white border border-[#1B4332]/15 flex items-center justify-center text-[#1B4332] hover:bg-[#D8F3DC]/40 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                    className="w-8 h-8 rounded-md bg-white border border-[#1B4332]/15 flex items-center justify-center text-[#1B4332] hover:bg-[#D8F3DC]/40 disabled:opacity-40 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
                   >
-                    <Minus className="w-4 h-4" aria-hidden="true" />
+                    <Minus className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
 
                   <div className="flex items-center gap-2.5 text-[#081C15] font-semibold tabular-nums">
-                    <Users className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
-                    <span className="text-base">{t.guestsLabel(partySize)}</span>
+                    <Users className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
+                    <span className="text-xs sm:text-sm">{t.guestsLabel(partySize)}</span>
                   </div>
 
                   <button
@@ -446,30 +446,30 @@ export function WaitlistJoinView({
                     aria-label="Increase party size"
                     onClick={() => setPartySize((prev) => Math.min(10, prev + 1))}
                     disabled={partySize >= 10}
-                    className="w-11 h-11 rounded-lg bg-white border border-[#1B4332]/15 flex items-center justify-center text-[#1B4332] hover:bg-[#D8F3DC]/40 disabled:opacity-40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                    className="w-8 h-8 rounded-md bg-white border border-[#1B4332]/15 flex items-center justify-center text-[#1B4332] hover:bg-[#D8F3DC]/40 disabled:opacity-40 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
                   >
-                    <Plus className="w-4 h-4" aria-hidden="true" />
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 </div>
               </div>
 
               {/* Reservation Time Selector */}
-              <div className="space-y-2">
-                <span className="block text-sm font-medium text-[#081C15]">
+              <div className="space-y-1">
+                <span className="block text-xs font-medium text-[#081C15]">
                   {lang === 'ar' ? 'وقت الحجز' : 'Reservation Time'}
                 </span>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     aria-pressed={timeMode === 'now'}
                     onClick={() => setTimeMode('now')}
-                    className={`px-3.5 py-2.5 rounded-xl border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    className={`px-2.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       timeMode === 'now'
                         ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
                         : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                     }`}
                   >
-                    <span className="text-xs sm:text-sm font-semibold">
+                    <span className="text-xs font-semibold">
                       {lang === 'ar' ? 'الآن (دخول فوري)' : 'Now (Join Queue)'}
                     </span>
                   </button>
@@ -478,14 +478,14 @@ export function WaitlistJoinView({
                     type="button"
                     aria-pressed={timeMode === 'scheduled'}
                     onClick={() => setTimeMode('scheduled')}
-                    className={`px-3.5 py-2.5 rounded-xl border text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    className={`px-2.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       timeMode === 'scheduled'
                         ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
                         : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
-                    <span className="text-xs sm:text-sm font-semibold">
+                    <span className="text-xs font-semibold">
                       {lang === 'ar' ? 'تحديد الوقت' : 'Select Time'}
                     </span>
                   </button>
@@ -505,7 +505,7 @@ export function WaitlistJoinView({
                         value={reservationDate}
                         onChange={(e) => setReservationDate(e.target.value)}
                         dir="ltr"
-                        className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#FBFBFB] border border-[#1B4332]/20 text-xs sm:text-sm text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                        className="w-full ps-8 pe-2.5 py-1.5 rounded-lg bg-[#FBFBFB] border border-[#1B4332]/20 text-xs text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
                       />
                     </div>
                     <div className="relative">
@@ -517,7 +517,7 @@ export function WaitlistJoinView({
                         aria-label={lang === 'ar' ? 'وقت الحجز' : 'Reservation Time Slot'}
                         value={reservationSlot}
                         onChange={(e) => setReservationSlot(e.target.value)}
-                        className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#FBFBFB] border border-[#1B4332]/20 text-xs sm:text-sm text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
+                        className="w-full ps-8 pe-2.5 py-1.5 rounded-lg bg-[#FBFBFB] border border-[#1B4332]/20 text-xs text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
                       >
                         {timeSlots.map((slot) => (
                           <option key={slot.value} value={slot.value}>
@@ -531,11 +531,11 @@ export function WaitlistJoinView({
               </div>
 
               {/* Seating Area */}
-              <div className="space-y-2">
-                <span className="block text-sm font-medium text-[#081C15]">
+              <div className="space-y-1">
+                <span className="block text-xs font-medium text-[#081C15]">
                   {t.seatingAreaLabel}
                 </span>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   {SEATING_AREAS.map((area) => {
                     const active = seatingArea === area.id;
                     return (
@@ -544,13 +544,13 @@ export function WaitlistJoinView({
                         type="button"
                         aria-pressed={active}
                         onClick={() => setSeatingArea(area.id)}
-                        className={`px-3.5 py-2.5 rounded-xl border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                        className={`px-2.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                           active
                             ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
                             : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                         }`}
                       >
-                        <p className="text-xs sm:text-sm font-semibold leading-snug">
+                        <p className="text-xs font-semibold leading-snug">
                           {lang === 'ar' ? area.labelAr : area.labelEn}
                         </p>
                       </button>
@@ -560,11 +560,11 @@ export function WaitlistJoinView({
               </div>
 
               {/* Celebrations & Special Requests */}
-              <div className="space-y-2">
-                <span className="block text-sm font-medium text-[#081C15]">
+              <div className="space-y-1">
+                <span className="block text-xs font-medium text-[#081C15]">
                   {t.specialRequestsLabel}
                 </span>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {SPECIAL_REQUEST_OPTIONS.map((req) => {
                     const selected = specialRequests.includes(req.id);
                     return (
@@ -573,7 +573,7 @@ export function WaitlistJoinView({
                         type="button"
                         aria-pressed={selected}
                         onClick={() => toggleSpecialRequest(req.id)}
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-xl border text-xs sm:text-sm font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 min-h-[28px] rounded-lg border text-xs font-medium cursor-pointer transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                           selected
                             ? 'bg-[#D8F3DC]/70 border-[#1B4332] text-[#081C15]'
                             : 'bg-[#FBFBFB] border-[#1B4332]/15 text-[#081C15]/80 hover:border-[#1B4332]/35'
@@ -593,10 +593,10 @@ export function WaitlistJoinView({
               </div>
 
               {/* Optional Notes */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label
                   htmlFor="guest-notes"
-                  className="block text-sm font-medium text-[#081C15]"
+                  className="block text-xs font-medium text-[#081C15]"
                 >
                   {t.notesLabel}
                 </label>
@@ -606,7 +606,7 @@ export function WaitlistJoinView({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder={t.notesPlaceholder}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#FBFBFB] border border-[#1B4332]/20 text-sm text-[#081C15] placeholder:text-[#081C15]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                  className="w-full px-3 py-2 rounded-lg bg-[#FBFBFB] border border-[#1B4332]/20 text-xs text-[#081C15] placeholder:text-[#081C15]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
                 />
               </div>
 
@@ -614,7 +614,7 @@ export function WaitlistJoinView({
               <button
                 type="submit"
                 disabled={!activeBranch.isOpen || isSubmitting}
-                className="w-full py-3.5 px-6 min-h-[48px] rounded-xl bg-[#1B4332] hover:bg-[#081C15] disabled:bg-[#1B4332]/40 text-white font-semibold text-sm sm:text-base transition-all duration-150 flex items-center justify-center gap-2.5 shadow-sm hover:shadow cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                className="w-full py-2.5 px-4 min-h-[38px] rounded-lg bg-[#1B4332] hover:bg-[#081C15] disabled:bg-[#1B4332]/40 text-white font-semibold text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-2.5 shadow-sm hover:shadow cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
               >
                 {isSubmitting ? (
                   <>
