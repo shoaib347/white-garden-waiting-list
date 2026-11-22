@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   BellRing,
   CheckCircle2,
-  ChevronDown,
   Clock,
   Leaf,
   MapPin,
@@ -42,7 +41,6 @@ export function TicketTrackerView({
   branches,
   entries,
   activeTicketId,
-  onSelectTicket,
   onTicketAction,
   onJoinAnother,
 }: TicketTrackerViewProps) {
@@ -162,37 +160,6 @@ export function TicketTrackerView({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6">
-      {/* Top Pass Switcher Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#1B4332]/10">
-        <div>
-          <p className="text-xs text-[#2D6A4F] font-medium">{t.ticketSwitchLabel}</p>
-          <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
-            {ticket.ticketCode}
-          </h1>
-        </div>
-
-        <div className="relative">
-          <label htmlFor="ticket-switcher" className="sr-only">
-            {t.ticketSwitchLabel}
-          </label>
-          <select
-            id="ticket-switcher"
-            value={ticket.id}
-            onChange={(e) => onSelectTicket(e.target.value)}
-            className="appearance-none bg-white border border-[#1B4332]/15 rounded-xl ps-3.5 pe-9 py-2 text-xs sm:text-sm font-medium text-[#081C15] min-h-[40px] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
-          >
-            {entries.slice(0, 15).map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.ticketCode} · {entry.guestName}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="w-4 h-4 text-[#1B4332]/70 pointer-events-none absolute top-1/2 -translate-y-1/2 end-3"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
 
       {/* Balanced 2-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
