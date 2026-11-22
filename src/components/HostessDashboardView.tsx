@@ -21,6 +21,7 @@ import {
 import {
   COPY,
   SEATING_AREAS,
+  getSeatingAreaLabel,
   SPECIAL_REQUEST_OPTIONS,
   type Language,
 } from '../data/whiteGardenData';
@@ -91,7 +92,7 @@ export function HostessDashboardView({
   const [walkinName, setWalkinName] = useState('');
   const [walkinPhone, setWalkinPhone] = useState('');
   const [walkinParty, setWalkinParty] = useState(2);
-  const [walkinArea, setWalkinArea] = useState<SeatingAreaId>('terrace');
+  const [walkinArea, setWalkinArea] = useState<SeatingAreaId>('outdoor_view');
   const [walkinErr, setWalkinErr] = useState('');
 
   useEffect(() => {
@@ -941,7 +942,7 @@ export function HostessDashboardView({
                 <span className="block text-xs font-medium text-[#081C15]">
                   {t.seatingAreaLabel}
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   {SEATING_AREAS.map((area) => {
                     const active = walkinArea === area.id;
                     return (
@@ -949,7 +950,7 @@ export function HostessDashboardView({
                         key={area.id}
                         type="button"
                         onClick={() => setWalkinArea(area.id)}
-                        className={`p-2 rounded-xl border text-xs font-medium text-center transition-colors ${
+                        className={`p-2 rounded-xl border text-[11px] font-medium text-center flex items-center justify-center leading-tight transition-colors ${
                           active
                             ? 'bg-[#1B4332] text-white border-[#1B4332]'
                             : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15'

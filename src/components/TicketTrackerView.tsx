@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import {
   COPY,
-  SEATING_AREAS,
+  getSeatingAreaLabel,
   SPECIAL_REQUEST_OPTIONS,
   type Language,
 } from '../data/whiteGardenData';
@@ -116,8 +116,7 @@ export function TicketTrackerView({
   }
   const strokeOffset = circumference * (1 - progressRatio);
 
-  const areaObj = SEATING_AREAS.find((a) => a.id === ticket.seatingArea);
-  const areaLabel = areaObj ? (lang === 'ar' ? areaObj.labelAr : areaObj.labelEn) : '';
+  const areaLabel = getSeatingAreaLabel(ticket.seatingArea, lang);
 
   const requestLabels = ticket.specialRequests
     .map((id) => SPECIAL_REQUEST_OPTIONS.find((opt) => opt.id === id))

@@ -68,7 +68,7 @@ export function WaitlistJoinView({
   const [activePeriod, setActivePeriod] = useState<MealPeriod>('evening');
   const [reservationSlot, setReservationSlot] = useState<string>('');
   const [timeError, setTimeError] = useState<string | undefined>(undefined);
-  const [seatingArea, setSeatingArea] = useState<SeatingAreaId>('terrace');
+  const [seatingArea, setSeatingArea] = useState<SeatingAreaId>('outdoor_view');
   const [specialRequests, setSpecialRequests] = useState<SpecialRequestId[]>([]);
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
@@ -732,7 +732,7 @@ export function WaitlistJoinView({
                 <span className="block text-xs font-medium text-[#081C15]">
                   {t.seatingAreaLabel}
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   {SEATING_AREAS.map((area) => {
                     const active = seatingArea === area.id;
                     return (
@@ -741,13 +741,13 @@ export function WaitlistJoinView({
                         type="button"
                         aria-pressed={active}
                         onClick={() => setSeatingArea(area.id)}
-                        className={`px-2.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                        className={`px-2 py-2 rounded-lg border text-center flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                           active
                             ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
                             : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                         }`}
                       >
-                        <p className="text-xs font-semibold leading-snug">
+                        <p className="text-[11px] sm:text-xs font-semibold leading-tight">
                           {lang === 'ar' ? area.labelAr : area.labelEn}
                         </p>
                       </button>

@@ -1,6 +1,12 @@
 export type BranchId = 'olaya' | 'roshn' | 'sixty' | 'theview' | 'ammariayh';
 
-export type SeatingAreaId = 'terrace' | 'floral_lounge' | 'pergola';
+export type SeatingAreaId =
+  | 'outdoor_view'
+  | 'outdoor_no_view'
+  | 'indoor'
+  | 'terrace'
+  | 'floral_lounge'
+  | 'pergola';
 
 export type SpecialRequestId = 'birthday' | 'anniversary' | 'high_chair' | 'quiet_corner';
 

@@ -161,20 +161,36 @@ export const SEATING_AREAS: {
   descAr: string;
 }[] = [
   {
-    id: 'terrace',
-    labelEn: 'Outdoor Botanical Terrace',
-    labelAr: 'التراس النباتي الخارجي',
-    descEn: 'Shaded olive trees & limestone breeze',
-    descAr: 'ظلال أشجار الزيتون ونسيم الحجر الطبيعي',
+    id: 'outdoor_view',
+    labelEn: 'Outdoor (With View)',
+    labelAr: 'خارجي (بإطلالة)',
+    descEn: '',
+    descAr: '',
   },
   {
-    id: 'floral_lounge',
-    labelEn: 'Indoor Floral Lounge',
-    labelAr: 'الصالة الداخلية المزهرة',
-    descEn: 'Climate-controlled velvet & marble dining',
-    descAr: 'أجواء مكيفة مع مقاعد مخملية ورخامية',
+    id: 'outdoor_no_view',
+    labelEn: 'Outdoor (Without View)',
+    labelAr: 'خارجي (بدون إطلالة)',
+    descEn: '',
+    descAr: '',
+  },
+  {
+    id: 'indoor',
+    labelEn: 'Indoor',
+    labelAr: 'داخلي',
+    descEn: '',
+    descAr: '',
   },
 ];
+
+export function getSeatingAreaLabel(areaId: string, lang: Language): string {
+  const direct = SEATING_AREAS.find((a) => a.id === areaId);
+  if (direct) return lang === 'ar' ? direct.labelAr : direct.labelEn;
+  if (areaId === 'terrace') return lang === 'ar' ? 'خارجي (بإطلالة)' : 'Outdoor (With View)';
+  if (areaId === 'pergola') return lang === 'ar' ? 'خارجي (بدون إطلالة)' : 'Outdoor (Without View)';
+  if (areaId === 'floral_lounge') return lang === 'ar' ? 'داخلي' : 'Indoor';
+  return areaId || '';
+}
 
 export const SPECIAL_REQUEST_OPTIONS: {
   id: SpecialRequestId;

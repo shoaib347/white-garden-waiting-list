@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Clock, MapPin, Phone, Users, X } from 'lucide-react';
-import { SEATING_AREAS, type Language } from '../data/whiteGardenData';
+import { getSeatingAreaLabel, type Language } from '../data/whiteGardenData';
 import { extractReservationTimeTag, formatReservationTime, type BranchInfo, type WaitlistEntry } from '../utils/waitlistLogic';
 
 interface GuestHistoryVisit {
@@ -115,10 +115,7 @@ export function GuestHistoryModal({
     return b ? (isAr ? b.nameAr : b.nameEn) : branchId;
   };
 
-  const areaLabel = (areaId: string) => {
-    const a = SEATING_AREAS.find((item) => item.id === areaId);
-    return a ? (isAr ? a.labelAr : a.labelEn) : areaId;
-  };
+  const areaLabel = (areaId: string) => getSeatingAreaLabel(areaId, lang);
 
   const statusBadge = (status: string) => {
     const s = status.toLowerCase();
