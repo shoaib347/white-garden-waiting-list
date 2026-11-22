@@ -171,11 +171,12 @@ export function TicketTrackerView({
                   {lang === 'ar' ? branch.nameAr : branch.nameEn}
                 </p>
               </div>
-              <div className="text-end shrink-0">
-                <p className="text-[11px] text-white/65">{t.brandName}</p>
-                <p className="font-mono text-sm sm:text-base font-semibold text-[#C5A059] tabular-nums">
-                  {ticket.ticketCode}
-                </p>
+              <div className="shrink-0">
+                <img
+                  src="/white-garden-logo.svg"
+                  alt="White Garden — وايت قاردن"
+                  className="h-11 sm:h-12 w-auto rounded-lg shadow-xs object-contain"
+                />
               </div>
             </div>
 
