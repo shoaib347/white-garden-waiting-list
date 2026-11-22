@@ -404,8 +404,20 @@ export function HostessDashboardView({
                     <span className="font-mono text-xs sm:text-sm font-semibold text-[#1B4332] tabular-nums">
                       {entry.ticketCode}
                     </span>
-                    <h3 className="text-base sm:text-lg font-semibold text-[#081C15]">
-                      {entry.guestName}
+                    <h3 className="text-base sm:text-lg font-semibold text-[#081C15] flex flex-wrap items-center gap-2">
+                      <span>{entry.guestName}</span>
+                      {entry.source === 'walkin' && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          {lang === 'ar' ? 'حضور مباشر' : 'Walk-in'}
+                        </span>
+                      )}
+                      {(entry.extraGraceMinutes ?? 0) > 0 && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-300">
+                          {lang === 'ar'
+                            ? `+${entry.extraGraceMinutes} دقائق إضافية`
+                            : `+${entry.extraGraceMinutes} min requested`}
+                        </span>
+                      )}
                     </h3>
                     {selectedBranch === 'all' && (
                       <>

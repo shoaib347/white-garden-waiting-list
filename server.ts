@@ -180,15 +180,25 @@ async function getPeopleAhead(reservationId: string, branchId = 'roshn'): Promis
   return index >= 0 ? index : 0;
 }
 
+// Helper: count [+5m] grace extensions stored in notes
+function parseExtraGraceMinutes(notes?: string | null): number {
+  if (!notes) return 0;
+  const matches = notes.match(/\[\+5m\]/g);
+  return matches ? matches.length * 5 : 0;
+}
+
 // Status Updater
 async function updateReservationStatus(reservationId: string, newStatus: string, reason?: string) {
   const cleanId = reservationId.replace(/^#/, '').toLowerCase();
   const now = new Date();
+  const isExtend = newStatus === 'extend_5m';
 
   let standardStatus = newStatus;
   if (newStatus === 'call' || newStatus === 'called') standardStatus = 'ready';
   if (newStatus === 'seat') standardStatus = 'seated';
   if (newStatus === 'cancel') standardStatus = 'cancelled';
+
+  const ALLOWED_STATUSES = new Set(['waiting', 'ready', 'seated', 'served', 'cancelled', 'no_show']);
 
   if (isPrismaAvailable) {
     try {
@@ -203,11 +213,24 @@ async function updateReservationStatus(reservationId: string, newStatus: string,
       });
 
       if (target) {
-        const updateData: any = { status: standardStatus };
-        if (standardStatus === 'ready') updateData.notified_at = now;
-        if (standardStatus === 'seated' || standardStatus === 'served') updateData.seated_at = now;
-        if (reason) {
-          updateData.notes = target.notes ? `${target.notes} | ${reason}` : reason;
+        const updateData: any = {};
+
+        if (isExtend) {
+          // Keep current valid status (repair if previously corrupted)
+          const safeStatus = ALLOWED_STATUSES.has(target.status) ? target.status : 'waiting';
+          updateData.status = safeStatus;
+          updateData.notes = target.notes ? `${target.notes} [+5m]` : '[+5m]';
+          updateData.estimated_wait_mins = (target.estimated_wait_mins || 10) + 5;
+        } else {
+          if (!ALLOWED_STATUSES.has(standardStatus)) {
+            return null;
+          }
+          updateData.status = standardStatus;
+          if (standardStatus === 'ready') updateData.notified_at = now;
+          if (standardStatus === 'seated' || standardStatus === 'served') updateData.seated_at = now;
+          if (reason) {
+            updateData.notes = target.notes ? `${target.notes} | ${reason}` : reason;
+          }
         }
 
         const updated = await prisma.reservation.update({
@@ -215,11 +238,16 @@ async function updateReservationStatus(reservationId: string, newStatus: string,
           data: updateData,
         });
 
+        const extraGraceMins = parseExtraGraceMinutes(updated.notes);
+
         const statusPayload = {
           reservation_id: updated.reservation_id,
           ticket_code: `#${updated.reservation_id.replace(/^#/, '')}`,
           status: updated.status,
           action_status: updated.status === 'ready' ? 'called' : updated.status,
+          action: isExtend ? 'extend_5m' : undefined,
+          extra_grace_minutes: extraGraceMins,
+          notes: updated.notes || null,
           queue_number: updated.queue_number,
           updated_at: now.toISOString(),
           customer_name: updated.customer_name,
@@ -229,6 +257,7 @@ async function updateReservationStatus(reservationId: string, newStatus: string,
         };
 
         io.to(`branch_${updated.branch_id}`).emit('queue:status_changed', statusPayload);
+        io.to('branch_all').emit('queue:status_changed', statusPayload);
         io.to(`reservation_${updated.reservation_id}`).emit('queue:status_changed', statusPayload);
         return { reservation: updated, statusPayload };
       }
@@ -241,18 +270,31 @@ async function updateReservationStatus(reservationId: string, newStatus: string,
   const memTarget = memReservations.find((r) => r.reservation_id.toLowerCase() === cleanId);
   if (!memTarget) return null;
 
-  memTarget.status = standardStatus;
-  if (standardStatus === 'ready') memTarget.notified_at = now;
-  if (standardStatus === 'seated') memTarget.seated_at = now;
-  if (reason) {
-    memTarget.notes = memTarget.notes ? `${memTarget.notes} | ${reason}` : reason;
+  if (isExtend) {
+    const safeStatus = ALLOWED_STATUSES.has(memTarget.status) ? memTarget.status : 'waiting';
+    memTarget.status = safeStatus;
+    memTarget.notes = memTarget.notes ? `${memTarget.notes} [+5m]` : '[+5m]';
+    memTarget.estimated_wait_mins = (memTarget.estimated_wait_mins || 10) + 5;
+  } else {
+    if (!ALLOWED_STATUSES.has(standardStatus)) return null;
+    memTarget.status = standardStatus;
+    if (standardStatus === 'ready') memTarget.notified_at = now;
+    if (standardStatus === 'seated') memTarget.seated_at = now;
+    if (reason) {
+      memTarget.notes = memTarget.notes ? `${memTarget.notes} | ${reason}` : reason;
+    }
   }
+
+  const extraGraceMins = parseExtraGraceMinutes(memTarget.notes);
 
   const statusPayload = {
     reservation_id: memTarget.reservation_id,
     ticket_code: `#${memTarget.reservation_id.replace(/^#/, '')}`,
     status: memTarget.status,
     action_status: memTarget.status === 'ready' ? 'called' : memTarget.status,
+    action: isExtend ? 'extend_5m' : undefined,
+    extra_grace_minutes: extraGraceMins,
+    notes: memTarget.notes || null,
     queue_number: memTarget.queue_number,
     updated_at: now.toISOString(),
     customer_name: memTarget.customer_name,
@@ -262,6 +304,7 @@ async function updateReservationStatus(reservationId: string, newStatus: string,
   };
 
   io.to(`branch_${memTarget.branch_id}`).emit('queue:status_changed', statusPayload);
+  io.to('branch_all').emit('queue:status_changed', statusPayload);
   io.to(`reservation_${memTarget.reservation_id}`).emit('queue:status_changed', statusPayload);
   return { reservation: memTarget, statusPayload };
 }

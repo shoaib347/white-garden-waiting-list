@@ -87,6 +87,14 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
   const calledMs = r.notified_at ? new Date(r.notified_at).getTime() : undefined;
   const seatedMs = r.seated_at ? new Date(r.seated_at).getTime() : undefined;
 
+  const rawNotes: string = r.notes || '';
+  const graceMatches = rawNotes.match(/\[\+5m\]/g);
+  const extraGraceMinutes = graceMatches ? graceMatches.length * 5 : 0;
+  const cleanNotes = rawNotes
+    .replace(/\[\+5m\]/g, '')
+    .replace(/\[WALKIN\]/g, '')
+    .trim();
+
   let uiStatus: WaitlistEntry['status'] = 'waiting';
   if (r.status === 'ready' || r.status === 'called') uiStatus = 'called';
   else if (r.status === 'seated' || r.status === 'served') uiStatus = 'seated';
@@ -102,13 +110,14 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
     partySize: r.party_size || 2,
     seatingArea: (r.area_name || 'terrace') as SeatingAreaId,
     specialRequests: [],
-    notes: r.notes || undefined,
+    notes: cleanNotes || undefined,
     status: uiStatus,
-    source: (r.notes && r.notes.includes('[WALKIN]')) ? 'walkin' : 'guest',
+    source: rawNotes.includes('[WALKIN]') ? 'walkin' : 'guest',
     createdAt: createdMs,
     calledAt: calledMs,
     seatedAt: seatedMs,
-    holdExpiresAt: calledMs ? calledMs + 10 * 60 * 1000 : undefined,
+    extraGraceMinutes: extraGraceMinutes || undefined,
+    holdExpiresAt: calledMs ? calledMs + (10 + extraGraceMinutes) * 60 * 1000 : undefined,
     events: [
       {
         id: `evt-${r.reservation_id}`,
@@ -320,10 +329,12 @@ export default function App() {
       );
     };
 
-    // Status changed (Called / Seated / Cancelled)
+    // Status changed (Called / Seated / Cancelled / +5m Extension)
     const handleStatusChanged = (payload: any) => {
       const code = payload.ticket_code || (payload.reservation_id?.startsWith('#') ? payload.reservation_id : `#${payload.reservation_id}`);
       const rawStatus = payload.action_status || (payload.status === 'ready' ? 'called' : payload.status);
+      const validStatuses = new Set(['waiting', 'called', 'seated', 'cancelled', 'no_show']);
+      const isExtend = payload.action === 'extend_5m';
 
       setEntries((prev) =>
         prev.map((e) => {
@@ -331,20 +342,45 @@ export default function App() {
             e.ticketCode.toLowerCase() === code.toLowerCase() ||
             e.id === payload.reservation_id
           ) {
-            const nextStatus = rawStatus;
+            const safeNextStatus = validStatuses.has(rawStatus) ? rawStatus : e.status;
+            const nextGrace =
+              typeof payload.extra_grace_minutes === 'number'
+                ? payload.extra_grace_minutes
+                : isExtend
+                  ? (e.extraGraceMinutes ?? 0) + 5
+                  : e.extraGraceMinutes;
+
+            const calledAtMs = payload.notified_at ? new Date(payload.notified_at).getTime() : e.calledAt;
+            let nextHoldExpires = e.holdExpiresAt;
+            if (isExtend && (safeNextStatus === 'called' || e.status === 'called')) {
+              const base = calledAtMs ? calledAtMs + (10 + (nextGrace ?? 5)) * 60 * 1000 : (e.holdExpiresAt ?? Date.now()) + 5 * 60 * 1000;
+              nextHoldExpires = base;
+            } else if (payload.notified_at) {
+              nextHoldExpires = new Date(payload.notified_at).getTime() + (10 + (nextGrace ?? 0)) * 60 * 1000;
+            }
+
             return {
               ...e,
-              status: nextStatus,
-              calledAt: payload.notified_at ? new Date(payload.notified_at).getTime() : e.calledAt,
+              status: isExtend ? e.status : safeNextStatus,
+              calledAt: calledAtMs,
               seatedAt: payload.seated_at ? new Date(payload.seated_at).getTime() : e.seatedAt,
-              holdExpiresAt: payload.notified_at ? new Date(payload.notified_at).getTime() + 10 * 60 * 1000 : e.holdExpiresAt,
+              extraGraceMinutes: nextGrace || undefined,
+              holdExpiresAt: nextHoldExpires,
             };
           }
           return e;
         })
       );
 
-      if (rawStatus === 'called' && audioEnabled) {
+      if (isExtend) {
+        if (audioEnabled) playHospitalityChime();
+        showToast(
+          lang === 'ar'
+            ? `طلب الضيف ${payload.customer_name || ''} (${code}) تمديد ٥ دقائق إضافية`
+            : `${payload.customer_name || 'Guest'} (${code}) requested +5 extra minutes`,
+          'chime',
+        );
+      } else if (rawStatus === 'called' && audioEnabled) {
         playHospitalityChime();
       }
     };

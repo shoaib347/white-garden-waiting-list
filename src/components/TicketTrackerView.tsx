@@ -128,7 +128,7 @@ export function TicketTrackerView({
     .filter(Boolean)
     .map((opt) => (lang === 'ar' ? opt!.labelAr : opt!.labelEn));
 
-  const statusConfig = {
+  const statusConfigMap = {
     waiting: {
       icon: Clock,
       label: t.statusWaiting,
@@ -154,7 +154,8 @@ export function TicketTrackerView({
       label: t.statusNoShow,
       boxClass: 'bg-amber-50 border-amber-300 text-amber-900',
     },
-  }[ticket.status];
+  };
+  const statusConfig = statusConfigMap[ticket.status] ?? statusConfigMap.waiting;
 
   const StatusIcon = statusConfig.icon;
   const branchPhoto = branch.imageUrl || AMMARIAYH_IMAGE_URL;
