@@ -399,17 +399,64 @@ app.get('/api/v1/auth/verify', (req, res) => {
   }
 });
 
-// Fetch queue and stats
+// Normalize mobile number to last 9 digits so +9665..., 9665..., 05... match identically
+function normalizePhoneKey(raw?: string | null): string {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length >= 9) return digits.slice(-9);
+  return digits;
+}
+
+// Compute visit count per normalized phone across all branches
+async function buildPhoneVisitCounts(): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (isPrismaAvailable) {
+    try {
+      const allMobiles = await prisma.reservation.findMany({
+        select: { mobile: true },
+      });
+      for (const row of allMobiles) {
+        const key = normalizePhoneKey(row.mobile);
+        if (key.length >= 7) {
+          counts.set(key, (counts.get(key) || 0) + 1);
+        }
+      }
+      return counts;
+    } catch {
+      // Fall through to memory
+    }
+  }
+  for (const row of memReservations) {
+    const key = normalizePhoneKey(row.mobile);
+    if (key.length >= 7) {
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+// Fetch queue and stats (enriched with cross-branch visit_count for returning guest detection)
 app.get('/api/v1/queue', async (req, res) => {
   const branchId = (req.query.branch_id as string) || 'roshn';
+  const visitCounts = await buildPhoneVisitCounts();
+
+  const attachVisitCount = <T extends { mobile: string }>(items: T[]) =>
+    items.map((item) => {
+      const key = normalizePhoneKey(item.mobile);
+      return {
+        ...item,
+        visit_count: key.length >= 7 ? (visitCounts.get(key) || 1) : 1,
+      };
+    });
 
   if (isPrismaAvailable) {
     try {
       const whereClause = branchId === 'all' ? {} : { branch_id: branchId };
-      const queue = await prisma.reservation.findMany({
+      const rawQueue = await prisma.reservation.findMany({
         where: whereClause,
         orderBy: { created_at: 'desc' },
       });
+      const queue = attachVisitCount(rawQueue);
       const stats = await getQueueStats(branchId);
       return res.json({ queue, stats, branch_id: branchId });
     } catch (e) {
@@ -417,12 +464,56 @@ app.get('/api/v1/queue', async (req, res) => {
     }
   }
 
-  const queue = branchId === 'all'
+  const rawQueue = branchId === 'all'
     ? memReservations
     : memReservations.filter((r) => r.branch_id.toLowerCase() === branchId.toLowerCase());
 
+  const queue = attachVisitCount(rawQueue);
   const stats = await getQueueStats(branchId);
   res.json({ queue, stats, branch_id: branchId });
+});
+
+// Fetch complete visit history for a specific customer across all branches
+app.get('/api/v1/guest-history', async (req, res) => {
+  const mobileQuery = typeof req.query.mobile === 'string' ? req.query.mobile : '';
+  const nameQuery = typeof req.query.name === 'string' ? req.query.name.trim().toLowerCase() : '';
+  const phoneKey = normalizePhoneKey(mobileQuery);
+
+  let allRows: any[] = [];
+  if (isPrismaAvailable) {
+    try {
+      allRows = await prisma.reservation.findMany({
+        orderBy: { created_at: 'desc' },
+      });
+    } catch {
+      allRows = memReservations;
+    }
+  } else {
+    allRows = memReservations;
+  }
+
+  const visits = allRows.filter((row) => {
+    const rowPhoneKey = normalizePhoneKey(row.mobile);
+    if (phoneKey.length >= 7 && rowPhoneKey.length >= 7) {
+      return rowPhoneKey === phoneKey;
+    }
+    if (nameQuery) {
+      return (row.customer_name || '').trim().toLowerCase() === nameQuery;
+    }
+    return false;
+  });
+
+  const seatedVisits = visits.filter((v) => v.status === 'seated' || v.status === 'served').length;
+  const noShowCount = visits.filter((v) => v.status === 'no_show').length;
+  const cancelledCount = visits.filter((v) => v.status === 'cancelled').length;
+
+  res.json({
+    total_visits: visits.length,
+    seated_visits: seatedVisits,
+    no_show_count: noShowCount,
+    cancelled_count: cancelledCount,
+    visits,
+  });
 });
 
 // Fetch single reservation
@@ -504,6 +595,10 @@ app.post('/api/v1/create', async (req, res) => {
           },
         });
 
+        const visitCounts = await buildPhoneVisitCounts();
+        const phoneKey = normalizePhoneKey(created.mobile);
+        const visitCount = phoneKey.length >= 7 ? (visitCounts.get(phoneKey) || 1) : 1;
+
         const newEntryPayload = {
           reservation_id: created.reservation_id,
           ticket_code: `#${created.reservation_id}`,
@@ -517,9 +612,11 @@ app.post('/api/v1/create', async (req, res) => {
           estimated_wait_mins: created.estimated_wait_mins,
           notes: created.notes,
           branch_id: normBranch,
+          visit_count: visitCount,
         };
 
         io.to(`branch_${normBranch}`).emit('queue:new_entry', newEntryPayload);
+        io.to('branch_all').emit('queue:new_entry', newEntryPayload);
         const peopleAhead = await getPeopleAhead(created.reservation_id, normBranch);
 
         return res.status(201).json({

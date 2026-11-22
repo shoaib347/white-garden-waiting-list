@@ -118,6 +118,7 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
     calledAt: calledMs,
     seatedAt: seatedMs,
     extraGraceMinutes: extraGraceMinutes || undefined,
+    visitCount: typeof r.visit_count === 'number' ? r.visit_count : undefined,
     holdExpiresAt: calledMs ? calledMs + (10 + extraGraceMinutes) * 60 * 1000 : undefined,
     events: (() => {
       const evts: WaitlistEntry['events'] = [
@@ -338,6 +339,7 @@ export default function App() {
         notes: payload.notes,
         branch_id: payload.branch_id || selectedBranch,
         status: payload.status,
+        visit_count: payload.visit_count,
       });
 
       setEntries((prev) => {
@@ -357,6 +359,7 @@ export default function App() {
             ...updated[optimisticIdx],
             id: newEntry.id,
             ticketCode: newEntry.ticketCode,
+            visitCount: newEntry.visitCount ?? updated[optimisticIdx].visitCount,
           };
           return updated;
         }

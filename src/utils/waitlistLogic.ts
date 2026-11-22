@@ -78,6 +78,7 @@ export interface WaitlistEntry {
   tableNumber?: string;
   extraGraceMinutes?: number;
   hostessNotifiedAt?: number;
+  visitCount?: number;
   events: TicketEvent[];
 }
 

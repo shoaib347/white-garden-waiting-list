@@ -33,6 +33,7 @@ import {
   type WaitlistEntry,
 } from '../utils/waitlistLogic';
 import type { StaffAuthSession } from './StaffLoginView';
+import { GuestHistoryModal } from './GuestHistoryModal';
 
 interface HostessDashboardViewProps {
   lang: Language;
@@ -77,6 +78,7 @@ export function HostessDashboardView({
   const [tableDrafts, setTableDrafts] = useState<Record<string, string>>({});
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [walkinOpen, setWalkinOpen] = useState(false);
+  const [historyGuest, setHistoryGuest] = useState<WaitlistEntry | null>(null);
 
   // Walk-in modal form state
   const defaultWalkinBranch: BranchId =
@@ -172,6 +174,20 @@ export function HostessDashboardView({
       hour: '2-digit',
       minute: '2-digit',
     });
+
+  const normalizePhoneDigits = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    return digits.length >= 9 ? digits.slice(-9) : digits;
+  };
+
+  const getGuestVisitCount = (entry: WaitlistEntry): number => {
+    const targetDigits = normalizePhoneDigits(entry.phone);
+    let localCount = 1;
+    if (targetDigits.length >= 7) {
+      localCount = entries.filter((e) => normalizePhoneDigits(e.phone) === targetDigits).length;
+    }
+    return Math.max(entry.visitCount ?? 1, localCount);
+  };
 
   const branchName = (branchId: BranchId) => {
     const b = branches.find((item) => item.id === branchId);
@@ -509,7 +525,29 @@ export function HostessDashboardView({
                       {entry.ticketCode}
                     </span>
                     <h3 className="text-base sm:text-lg font-semibold text-[#081C15] flex flex-wrap items-center gap-2">
-                      <span>{entry.guestName}</span>
+                      {getGuestVisitCount(entry) >= 2 && (
+                        <span
+                          title={
+                            lang === 'ar'
+                              ? `ضيف عائد (الزيارة رقم ${getGuestVisitCount(entry)}) — اضغط على الاسم لعرض السجل`
+                              : `Returning guest (Visit #${getGuestVisitCount(entry)}) — Click name for history`
+                          }
+                          aria-label={
+                            lang === 'ar'
+                              ? `ضيف عائد، الزيارة رقم ${getGuestVisitCount(entry)}`
+                              : `Returning guest, visit ${getGuestVisitCount(entry)}`
+                          }
+                          className="w-2.5 h-2.5 rounded-full bg-[#1B4332] ring-2 ring-[#D8F3DC] inline-block shrink-0"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setHistoryGuest(entry)}
+                        title={lang === 'ar' ? 'عرض سجل زيارات الضيف' : 'View guest visit history'}
+                        className="text-start hover:text-[#1B4332] hover:underline decoration-[#C5A059] underline-offset-4 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded"
+                      >
+                        {entry.guestName}
+                      </button>
                       {entry.source === 'walkin' && (
                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
                           {lang === 'ar' ? 'حضور مباشر' : 'Walk-in'}
@@ -937,6 +975,16 @@ export function HostessDashboardView({
             </form>
           </div>
         </div>
+      )}
+      {/* Guest Visit History Modal */}
+      {historyGuest && (
+        <GuestHistoryModal
+          lang={lang}
+          guest={historyGuest}
+          branches={branches}
+          allEntries={entries}
+          onClose={() => setHistoryGuest(null)}
+        />
       )}
     </div>
   );
