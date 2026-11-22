@@ -446,39 +446,6 @@ export function TicketTrackerView({
               </span>
             </div>
           </div>
-
-          {/* Live Activity Timeline */}
-          <div className="bg-white border border-[#1B4332]/15 rounded-2xl p-6 space-y-4">
-            <h2 className="font-display text-xl font-semibold text-[#081C15]">
-              {t.ticketTimelineTitle}
-            </h2>
-            <ul className="space-y-3">
-              {ticket.events.length > 0 ? (
-                ticket.events.map((evt) => (
-                  <li
-                    key={evt.id}
-                    className="flex items-start justify-between gap-4 pb-3 border-b border-[#1B4332]/10 last:border-b-0 last:pb-0 text-sm"
-                  >
-                    <span className="text-[#081C15]/85">
-                      {lang === 'ar' ? evt.messageAr : evt.messageEn}
-                    </span>
-                    <span className="text-xs text-[#081C15]/50 tabular-nums shrink-0">
-                      {new Date(evt.timestamp).toLocaleTimeString(
-                        lang === 'ar' ? 'ar-SA' : 'en-US',
-                        { hour: '2-digit', minute: '2-digit' },
-                      )}
-                    </span>
-                  </li>
-                ))
-              ) : (
-                <li className="text-sm text-[#081C15]/70">
-                  {lang === 'ar'
-                    ? `تم تسجيل التذكرة في ${branch.nameAr}.`
-                    : `Registered at ${branch.nameEn} waitlist.`}
-                </li>
-              )}
-            </ul>
-          </div>
         </div>
       </div>
     </div>
