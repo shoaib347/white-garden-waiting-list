@@ -663,16 +663,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F9F6] text-[#081C15]">
-      <Header
-        lang={lang}
-        onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
-        activeView={activeView}
-        onSelectView={(view) => navigateToView(view)}
-        branches={branches}
-        selectedBranch={selectedBranch}
-        onSelectBranch={(id) => setSelectedBranch(id)}
-        lockedBranchId={activeView === 'hostess' && staffAuth && staffAuth.branchId !== 'all' ? staffAuth.branchId : null}
-      />
+      {activeView === 'hostess' && (
+        <Header
+          lang={lang}
+          onToggleLang={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
+          activeView={activeView}
+          onSelectView={(view) => navigateToView(view)}
+          branches={branches}
+          selectedBranch={selectedBranch}
+          onSelectBranch={(id) => setSelectedBranch(id)}
+          lockedBranchId={staffAuth && staffAuth.branchId !== 'all' ? staffAuth.branchId : null}
+        />
+      )}
 
       <main className="flex-1">
         {activeView === 'join' && (
