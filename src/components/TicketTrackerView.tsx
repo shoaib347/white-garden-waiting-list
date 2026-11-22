@@ -163,10 +163,7 @@ export function TicketTrackerView({
           <div className="bg-white border border-[#1B4332]/15 rounded-3xl overflow-hidden shadow-sm">
             {/* Pass Header Band */}
             <div className="bg-[#081C15] text-white px-6 py-5 border-b border-[#C5A059]/40 flex items-center justify-between gap-4">
-              <div className="space-y-0.5 min-w-0">
-                <p className="text-xs text-[#95D5B2] font-medium">
-                  {lang === 'ar' ? branch.districtAr : branch.districtEn}
-                </p>
+              <div className="min-w-0">
                 <p className="font-display text-2xl font-semibold truncate">
                   {lang === 'ar' ? branch.nameAr : branch.nameEn}
                 </p>
