@@ -284,6 +284,30 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // Detect if embedded in WordPress iframe and notify parent of exact height so there is zero empty bottom space
+  const isEmbedded = typeof window !== 'undefined' && window.self !== window.top;
+  useEffect(() => {
+    if (!isEmbedded) return;
+    const postHeight = () => {
+      const rootEl = document.getElementById('root');
+      const h = rootEl ? Math.ceil(rootEl.getBoundingClientRect().height) : document.body.scrollHeight;
+      if (h > 100) {
+        window.parent.postMessage({ type: 'wg-resize', height: h }, '*');
+      }
+    };
+    postHeight();
+    const ro = new ResizeObserver(() => postHeight());
+    const rootEl = document.getElementById('root');
+    if (rootEl) ro.observe(rootEl);
+    window.addEventListener('resize', postHeight);
+    const timer = window.setInterval(postHeight, 600);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', postHeight);
+      window.clearInterval(timer);
+    };
+  }, [isEmbedded, activeView, lang, entries.length]);
+
   // Toast notification helper
   const showToast = useCallback((message: string, kind: 'info' | 'chime' = 'info') => {
     const id = `toast-${Date.now()}`;
@@ -811,7 +835,7 @@ export default function App() {
     selectedBranch === 'all' ? 'roshn' : selectedBranch;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F9F6] text-[#081C15]">
+    <div className={`${activeView === 'hostess' ? 'min-h-screen' : ''} flex flex-col bg-[#F7F9F6] text-[#081C15]`}>
       {activeView === 'hostess' && (
         <Header
           lang={lang}
@@ -825,7 +849,7 @@ export default function App() {
         />
       )}
 
-      <main className="flex-1">
+      <main className={activeView === 'hostess' ? 'flex-1' : ''}>
         {activeView === 'join' && (
           <WaitlistJoinView
             lang={lang}
@@ -885,17 +909,19 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-[#1B4332]/10 bg-[#FBFBFB] mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#081C15]/60">
-          <span>{t.footerCopy}</span>
-          <div className="flex items-center gap-2">
-            <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
-            <span>{isConnected ? (lang === 'ar' ? 'متصل بالشبكة الحية' : 'Live Cloud Sync') : (lang === 'ar' ? 'وضع غير متصل' : 'Offline / Standalone')}</span>
-            <span className="mx-1">•</span>
-            <span>{t.brandTagline}</span>
+      {activeView === 'hostess' && (
+        <footer className="border-t border-[#1B4332]/10 bg-[#FBFBFB] mt-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#081C15]/60">
+            <span>{t.footerCopy}</span>
+            <div className="flex items-center gap-2">
+              <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
+              <span>{isConnected ? (lang === 'ar' ? 'متصل بالشبكة الحية' : 'Live Cloud Sync') : (lang === 'ar' ? 'وضع غير متصل' : 'Offline / Standalone')}</span>
+              <span className="mx-1">•</span>
+              <span>{t.brandTagline}</span>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* Live Toast Feedback */}
       {toast && (
