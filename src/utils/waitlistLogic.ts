@@ -6,6 +6,29 @@ export type SpecialRequestId = 'birthday' | 'anniversary' | 'high_chair' | 'quie
 
 export type TicketStatus = 'waiting' | 'called' | 'seated' | 'no_show' | 'cancelled';
 
+export interface DayHours {
+  /** Minutes from 00:00 (e.g. 450 = 7:30 AM, 960 = 4:00 PM) */
+  openMin: number;
+  /** Minutes from 00:00; values >= 1440 indicate closing at/after midnight (e.g. 1440 = 12:00 AM, 1470 = 12:30 AM, 1560 = 2:00 AM) */
+  closeMin: number;
+}
+
+/** 0 = Sunday, 1 = Monday, ..., 6 = Saturday */
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type WeeklySchedule = Record<DayOfWeek, DayHours>;
+
+export type MealPeriod = 'morning' | 'afternoon' | 'evening';
+
+export interface ReservationTimeSlot {
+  /** HH:MM in 24-hour clock (e.g. "16:00", "23:30", "00:00", "01:00") */
+  value: string;
+  /** Service-day minute offset (may exceed 1440 for post-midnight slots) */
+  minuteOfDay: number;
+  period: MealPeriod;
+  labelEn: string;
+  labelAr: string;
+}
+
 export interface BranchInfo {
   id: BranchId;
   code: string;
@@ -21,6 +44,7 @@ export interface BranchInfo {
   taglineAr: string;
   hoursEn: string;
   hoursAr: string;
+  weeklySchedule?: WeeklySchedule;
   avgTurnoverMinutes: number;
   imageUrl?: string;
   isOpen: boolean;
@@ -458,4 +482,72 @@ export function formatReservationTime(raw: string, lang: 'en' | 'ar'): string {
     return `${dateLabel} · ${timeLabel}`;
   }
   return `${datePart} · ${timeLabel}`;
+}
+
+const DEFAULT_DAY_HOURS: DayHours = { openMin: 900, closeMin: 1470 };
+
+export function toLocalYmd(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+export function formatMinutesOfDay(totalMins: number, lang: 'en' | 'ar'): string {
+  const normalized = ((totalMins % 1440) + 1440) % 1440;
+  const h = Math.floor(normalized / 60);
+  const m = normalized % 60;
+  const isPm = h >= 12;
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const mStr = String(m).padStart(2, '0');
+  return lang === 'ar'
+    ? `${h12}:${mStr} ${isPm ? 'م' : 'ص'}`
+    : `${h12}:${mStr} ${isPm ? 'PM' : 'AM'}`;
+}
+
+export function getBranchDayHours(branch: BranchInfo, ymd: string): DayHours {
+  if (!branch.weeklySchedule) return DEFAULT_DAY_HOURS;
+  const parsed = new Date(`${ymd}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return DEFAULT_DAY_HOURS;
+  const dow = parsed.getDay() as DayOfWeek;
+  return branch.weeklySchedule[dow] ?? DEFAULT_DAY_HOURS;
+}
+
+/**
+ * Generates 30-minute reservation slots for a specific branch and date.
+ * Enforces the rule that the last reservation slot is strictly 1 hour (60 min) before closing.
+ * For today's date, past slots (<= current time) are automatically omitted.
+ */
+export function getBranchReservationSlots(
+  branch: BranchInfo,
+  ymd: string,
+  now: Date = new Date(),
+): {
+  openMin: number;
+  closeMin: number;
+  lastReservationMin: number;
+  slots: ReservationTimeSlot[];
+} {
+  const { openMin, closeMin } = getBranchDayHours(branch, ymd);
+  const lastReservationMin = Math.max(openMin, closeMin - 60);
+  const isToday = ymd === toLocalYmd(now);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const slots: ReservationTimeSlot[] = [];
+  for (let m = openMin; m <= lastReservationMin; m += 30) {
+    if (isToday && m <= nowMinutes) {
+      continue;
+    }
+    const norm = ((m % 1440) + 1440) % 1440;
+    const h = Math.floor(norm / 60);
+    const mins = norm % 60;
+    const value = `${String(h).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    const period: MealPeriod = m < 720 ? 'morning' : m < 1080 ? 'afternoon' : 'evening';
+    slots.push({
+      value,
+      minuteOfDay: m,
+      period,
+      labelEn: formatMinutesOfDay(m, 'en'),
+      labelAr: formatMinutesOfDay(m, 'ar'),
+    });
+  }
+
+  return { openMin, closeMin, lastReservationMin, slots };
 }

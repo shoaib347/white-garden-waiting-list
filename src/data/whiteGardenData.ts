@@ -26,8 +26,17 @@ export const INITIAL_BRANCHES: BranchInfo[] = [
     lng: 46.689,
     taglineEn: 'Sculpted ivory arches & signature floral atrium',
     taglineAr: 'أقواس عاجية فاخرة وردهة نباتية مميزة',
-    hoursEn: '07:30 AM – 01:00 AM',
-    hoursAr: '٧:٣٠ ص – ١:٠٠ ص',
+    hoursEn: '7:30 AM – 2:00 AM (Fri 1 PM · Thu–Fri till 4 AM)',
+    hoursAr: '٧:٣٠ ص – ٢:٠٠ ص (الجمعة ١ م · الخميس–الجمعة حتى ٤ ص)',
+    weeklySchedule: {
+      0: { openMin: 450, closeMin: 1560 }, // Sun: 7:30 AM – 2:00 AM (last res 1:00 AM)
+      1: { openMin: 450, closeMin: 1560 }, // Mon: 7:30 AM – 2:00 AM
+      2: { openMin: 450, closeMin: 1560 }, // Tue: 7:30 AM – 2:00 AM
+      3: { openMin: 450, closeMin: 1560 }, // Wed: 7:30 AM – 2:00 AM
+      4: { openMin: 450, closeMin: 1680 }, // Thu: 7:30 AM – 4:00 AM (last res 3:00 AM)
+      5: { openMin: 780, closeMin: 1680 }, // Fri: 1:00 PM – 4:00 AM (last res 3:00 AM)
+      6: { openMin: 450, closeMin: 1560 }, // Sat: 7:30 AM – 2:00 AM
+    },
     avgTurnoverMinutes: 16,
     imageUrl: OLAYA_IMAGE_URL,
     isOpen: true,
@@ -45,8 +54,17 @@ export const INITIAL_BRANCHES: BranchInfo[] = [
     lng: 46.7279,
     taglineEn: 'Open-air travertine courtyard & olive grove',
     taglineAr: 'فناء حجر الترافرتين المفتوح وأشجار الزيتون',
-    hoursEn: '08:00 AM – 01:30 AM',
-    hoursAr: '٨:٠٠ ص – ١:٣٠ ص',
+    hoursEn: '1:30 PM – 12:30 AM',
+    hoursAr: '١:٣٠ م – ١٢:٣٠ ص',
+    weeklySchedule: {
+      0: { openMin: 810, closeMin: 1470 }, // Sun–Sat: 1:30 PM – 12:30 AM (last res 11:30 PM)
+      1: { openMin: 810, closeMin: 1470 },
+      2: { openMin: 810, closeMin: 1470 },
+      3: { openMin: 810, closeMin: 1470 },
+      4: { openMin: 810, closeMin: 1470 },
+      5: { openMin: 810, closeMin: 1470 },
+      6: { openMin: 810, closeMin: 1470 },
+    },
     avgTurnoverMinutes: 14,
     imageUrl: HERO_IMAGE_URL,
     isOpen: true,
@@ -64,8 +82,17 @@ export const INITIAL_BRANCHES: BranchInfo[] = [
     lng: 46.7245,
     taglineEn: 'Intimate European tea salon & sunlit conservatory',
     taglineAr: 'صالون شاي أوروبي راقٍ وحديقة زجاجية مشمسة',
-    hoursEn: '08:00 AM – 12:30 AM',
-    hoursAr: '٨:٠٠ ص – ١٢:٣٠ ص',
+    hoursEn: '3:30 PM – 12:30 AM (Thu–Sat 1 PM – 1 AM)',
+    hoursAr: '٣:٣٠ م – ١٢:٣٠ ص (الخميس–السبت ١ م – ١ ص)',
+    weeklySchedule: {
+      0: { openMin: 930, closeMin: 1470 }, // Sun: 3:30 PM – 12:30 AM (last res 11:30 PM)
+      1: { openMin: 930, closeMin: 1470 }, // Mon: 3:30 PM – 12:30 AM
+      2: { openMin: 930, closeMin: 1470 }, // Tue: 3:30 PM – 12:30 AM
+      3: { openMin: 930, closeMin: 1470 }, // Wed: 3:30 PM – 12:30 AM
+      4: { openMin: 780, closeMin: 1500 }, // Thu: 1:00 PM – 1:00 AM (last res 12:00 AM)
+      5: { openMin: 780, closeMin: 1500 }, // Fri: 1:00 PM – 1:00 AM
+      6: { openMin: 780, closeMin: 1500 }, // Sat: 1:00 PM – 1:00 AM
+    },
     avgTurnoverMinutes: 13,
     isOpen: true,
   },
@@ -82,8 +109,17 @@ export const INITIAL_BRANCHES: BranchInfo[] = [
     lng: 46.7058,
     taglineEn: 'Elevated garden lounge with glass skylight',
     taglineAr: 'صالة حدائقية مرتفعة بسقف زجاجي مضيء',
-    hoursEn: '09:00 AM – 12:30 AM',
-    hoursAr: '٩:٠٠ ص – ١٢:٣٠ ص',
+    hoursEn: '3:00 PM – 12:00 AM (Tue–Fri till 12:30 AM)',
+    hoursAr: '٣:٠٠ م – ١٢:٠٠ ص (الثلاثاء–الجمعة حتى ١٢:٣٠ ص)',
+    weeklySchedule: {
+      0: { openMin: 900, closeMin: 1440 }, // Sun: 3:00 PM – 12:00 AM (last res 11:00 PM)
+      1: { openMin: 900, closeMin: 1440 }, // Mon: 3:00 PM – 12:00 AM (last res 11:00 PM)
+      2: { openMin: 900, closeMin: 1470 }, // Tue: 3:00 PM – 12:30 AM (last res 11:30 PM)
+      3: { openMin: 900, closeMin: 1470 }, // Wed: 3:00 PM – 12:30 AM (last res 11:30 PM)
+      4: { openMin: 900, closeMin: 1470 }, // Thu: 3:00 PM – 12:30 AM (last res 11:30 PM)
+      5: { openMin: 900, closeMin: 1470 }, // Fri: 3:00 PM – 12:30 AM (last res 11:30 PM)
+      6: { openMin: 900, closeMin: 1440 }, // Sat: 3:00 PM – 12:00 AM (last res 11:00 PM)
+    },
     avgTurnoverMinutes: 12,
     isOpen: true,
   },
@@ -100,8 +136,17 @@ export const INITIAL_BRANCHES: BranchInfo[] = [
     lng: 46.4622,
     taglineEn: 'Limestone fountain pergolas & jasmine sanctuary',
     taglineAr: 'برجولات نافورة الحجر الجيري وملاذ الياسمين',
-    hoursEn: '04:00 PM – 02:00 AM',
-    hoursAr: '٤:٠٠ م – ٢:٠٠ ص',
+    hoursEn: '4:00 PM – 12:30 AM',
+    hoursAr: '٤:٠٠ م – ١٢:٣٠ ص',
+    weeklySchedule: {
+      0: { openMin: 960, closeMin: 1470 }, // Sun–Sat: 4:00 PM – 12:30 AM (last res 11:30 PM)
+      1: { openMin: 960, closeMin: 1470 },
+      2: { openMin: 960, closeMin: 1470 },
+      3: { openMin: 960, closeMin: 1470 },
+      4: { openMin: 960, closeMin: 1470 },
+      5: { openMin: 960, closeMin: 1470 },
+      6: { openMin: 960, closeMin: 1470 },
+    },
     avgTurnoverMinutes: 18,
     imageUrl: AMMARIAYH_IMAGE_URL,
     isOpen: true,

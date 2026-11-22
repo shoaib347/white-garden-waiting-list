@@ -1,8 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  Calendar,
   CheckCircle2,
   Clock,
   MapPin,
@@ -19,10 +18,14 @@ import {
   type Language,
 } from '../data/whiteGardenData';
 import {
+  formatMinutesOfDay,
   getBranchLiveSummary,
+  getBranchReservationSlots,
+  toLocalYmd,
   validateSaudiPhone,
   type BranchId,
   type BranchInfo,
+  type MealPeriod,
   type SeatingAreaId,
   type SpecialRequestId,
   type WaitlistEntry,
@@ -60,41 +63,11 @@ export function WaitlistJoinView({
   const [guestName, setGuestName] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
   const [partySize, setPartySize] = useState(2);
-  const getTodayYmd = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-  const getDefaultSlot = () => {
-    const d = new Date();
-    const nextMin = d.getMinutes() < 30 ? 30 : 0;
-    const nextHour = d.getMinutes() < 30 ? d.getHours() : (d.getHours() + 1) % 24;
-    return `${String(nextHour).padStart(2, '0')}:${String(nextMin).padStart(2, '0')}`;
-  };
   const [timeMode, setTimeMode] = useState<'now' | 'scheduled'>('now');
-  const [reservationDate, setReservationDate] = useState<string>(() => getTodayYmd());
-  const [reservationSlot, setReservationSlot] = useState<string>(() => getDefaultSlot());
-
-  // 30-minute time slots covering all White Garden branch operating hours (08:00 AM – 01:30 AM)
-  const timeSlots: { value: string; labelEn: string; labelAr: string }[] = (() => {
-    const slots: { value: string; labelEn: string; labelAr: string }[] = [];
-    const hoursOrder = [
-      8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1,
-    ];
-    for (const h of hoursOrder) {
-      for (const m of [0, 30]) {
-        const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        const isPm = h >= 12;
-        const h12 = h % 12 === 0 ? 12 : h % 12;
-        const mStr = String(m).padStart(2, '0');
-        slots.push({
-          value: val,
-          labelEn: `${h12}:${mStr} ${isPm ? 'PM' : 'AM'}`,
-          labelAr: `${h12}:${mStr} ${isPm ? 'م' : 'ص'}`,
-        });
-      }
-    }
-    return slots;
-  })();
+  const [reservationDate, setReservationDate] = useState<string>(() => toLocalYmd(new Date()));
+  const [activePeriod, setActivePeriod] = useState<MealPeriod>('evening');
+  const [reservationSlot, setReservationSlot] = useState<string>('');
+  const [timeError, setTimeError] = useState<string | undefined>(undefined);
   const [seatingArea, setSeatingArea] = useState<SeatingAreaId>('terrace');
   const [specialRequests, setSpecialRequests] = useState<SpecialRequestId[]>([]);
   const [notes, setNotes] = useState('');
@@ -114,6 +87,83 @@ export function WaitlistJoinView({
 
   const activeBranch = branches.find((b) => b.id === selectedBranchId) ?? branches[1];
   const activeSummary = getBranchLiveSummary(entries, activeBranch);
+
+  const upcomingDays = useMemo(() => {
+    const enWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const arWeekdays = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const arMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const now = new Date();
+    return Array.from({ length: 7 }, (_, offset) => {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+      const ymd = toLocalYmd(d);
+      const { slots } = getBranchReservationSlots(activeBranch, ymd, now);
+      return {
+        ymd,
+        dayNum: d.getDate(),
+        dayLabelEn: offset === 0 ? 'Today' : enWeekdays[d.getDay()],
+        dayLabelAr: offset === 0 ? 'اليوم' : arWeekdays[d.getDay()],
+        monthEn: enMonths[d.getMonth()],
+        monthAr: arMonths[d.getMonth()],
+        hasSlots: slots.length > 0,
+      };
+    });
+  }, [activeBranch]);
+
+  const daySchedule = useMemo(
+    () => getBranchReservationSlots(activeBranch, reservationDate),
+    [activeBranch, reservationDate],
+  );
+
+  const availablePeriods = useMemo(() => {
+    const order: MealPeriod[] = ['morning', 'afternoon', 'evening'];
+    return order.filter((p) => daySchedule.slots.some((s) => s.period === p));
+  }, [daySchedule.slots]);
+
+  const visibleSlots = useMemo(
+    () => daySchedule.slots.filter((s) => s.period === activePeriod),
+    [daySchedule.slots, activePeriod],
+  );
+
+  // Auto-advance from Today to Tomorrow if Today has no slots remaining when opening Select Time
+  useEffect(() => {
+    if (
+      timeMode === 'scheduled' &&
+      reservationDate === upcomingDays[0]?.ymd &&
+      !upcomingDays[0]?.hasSlots &&
+      upcomingDays[1]?.hasSlots
+    ) {
+      setReservationDate(upcomingDays[1].ymd);
+    }
+  }, [timeMode, reservationDate, upcomingDays]);
+
+  // Keep activePeriod and reservationSlot valid whenever branch or date changes
+  useEffect(() => {
+    if (daySchedule.slots.length === 0) {
+      setReservationSlot('');
+      return;
+    }
+    const existing = daySchedule.slots.find((s) => s.value === reservationSlot);
+    if (existing) {
+      if (existing.period !== activePeriod) {
+        setActivePeriod(existing.period);
+      }
+      setTimeError(undefined);
+      return;
+    }
+    const nextPeriod = availablePeriods.includes(activePeriod)
+      ? activePeriod
+      : availablePeriods[0];
+    if (nextPeriod && nextPeriod !== activePeriod) {
+      setActivePeriod(nextPeriod);
+    }
+    const firstInPeriod =
+      daySchedule.slots.find((s) => s.period === nextPeriod) ?? daySchedule.slots[0];
+    if (firstInPeriod) {
+      setReservationSlot(firstInPeriod.value);
+      setTimeError(undefined);
+    }
+  }, [daySchedule.slots, availablePeriods, activePeriod, reservationSlot]);
 
   const toggleSpecialRequest = (id: SpecialRequestId) => {
     setSpecialRequests((prev) =>
@@ -136,6 +186,19 @@ export function WaitlistJoinView({
       nextErrors.phone =
         phoneResult.errorKey === 'empty' ? t.errPhoneEmpty : t.errPhoneInvalid;
     }
+
+    if (timeMode === 'scheduled' && !reservationSlot) {
+      setTimeError(
+        lang === 'ar'
+          ? 'يرجى اختيار وقت حجز متاح.'
+          : 'Please select an available reservation time.',
+      );
+      if (nextErrors.name || nextErrors.phone) {
+        setErrors(nextErrors);
+      }
+      return;
+    }
+    setTimeError(undefined);
 
     if (nextErrors.name || nextErrors.phone) {
       setErrors(nextErrors);
@@ -453,20 +516,23 @@ export function WaitlistJoinView({
                 </div>
               </div>
 
-              {/* Reservation Time Selector */}
-              <div className="space-y-1">
+              {/* Reservation Time Selector — Option 1: Date Strip & Time Pills */}
+              <div className="space-y-2">
                 <span className="block text-xs font-medium text-[#081C15]">
                   {lang === 'ar' ? 'وقت الحجز' : 'Reservation Time'}
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1 p-0.5 rounded-full bg-[#FBFBFB] border border-[#1B4332]/15">
                   <button
                     type="button"
                     aria-pressed={timeMode === 'now'}
-                    onClick={() => setTimeMode('now')}
-                    className={`px-2.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    onClick={() => {
+                      setTimeMode('now');
+                      setTimeError(undefined);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-full text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       timeMode === 'now'
-                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
-                        : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
+                        ? 'bg-[#1B4332] text-white shadow-xs'
+                        : 'text-[#081C15] hover:bg-[#F2F6F3]'
                     }`}
                   >
                     <span className="text-xs font-semibold">
@@ -478,10 +544,10 @@ export function WaitlistJoinView({
                     type="button"
                     aria-pressed={timeMode === 'scheduled'}
                     onClick={() => setTimeMode('scheduled')}
-                    className={`px-2.5 py-1.5 rounded-lg border text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    className={`px-2.5 py-1.5 rounded-full text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       timeMode === 'scheduled'
-                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
-                        : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
+                        ? 'bg-[#1B4332] text-white shadow-xs'
+                        : 'text-[#081C15] hover:bg-[#F2F6F3]'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
@@ -492,41 +558,172 @@ export function WaitlistJoinView({
                 </div>
 
                 {timeMode === 'scheduled' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                    <div className="relative">
-                      <Calendar
-                        className="w-4 h-4 text-[#C5A059] absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none"
-                        aria-hidden="true"
-                      />
-                      <input
-                        type="date"
-                        aria-label={lang === 'ar' ? 'تاريخ الحجز' : 'Reservation Date'}
-                        min={getTodayYmd()}
-                        value={reservationDate}
-                        onChange={(e) => setReservationDate(e.target.value)}
-                        dir="ltr"
-                        className="w-full ps-8 pe-2.5 py-1.5 rounded-lg bg-[#FBFBFB] border border-[#1B4332]/20 text-xs text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
-                      />
+                  <div className="p-2.5 rounded-2xl bg-[#F7F9F6] border border-[#1B4332]/12 space-y-2.5">
+                    {/* 7-Day Horizontal Date Strip */}
+                    <div
+                      className="flex gap-1 overflow-x-auto pb-0.5"
+                      role="radiogroup"
+                      aria-label={lang === 'ar' ? 'تاريخ الحجز' : 'Reservation Date'}
+                    >
+                      {upcomingDays.map((day) => {
+                        const selected = day.ymd === reservationDate;
+                        return (
+                          <button
+                            key={day.ymd}
+                            type="button"
+                            role="radio"
+                            aria-checked={selected}
+                            disabled={!day.hasSlots}
+                            onClick={() => {
+                              setReservationDate(day.ymd);
+                              setTimeError(undefined);
+                            }}
+                            className={`flex-1 min-w-[46px] py-1.5 px-1 rounded-xl border text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                              selected
+                                ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs cursor-pointer'
+                                : day.hasSlots
+                                  ? 'bg-white text-[#081C15] border-[#1B4332]/12 hover:border-[#1B4332]/35 cursor-pointer'
+                                  : 'bg-white/60 text-[#081C15]/35 border-[#1B4332]/10 cursor-not-allowed'
+                            }`}
+                          >
+                            <span
+                              className={`block text-[9px] font-semibold uppercase tracking-wide leading-tight ${
+                                selected
+                                  ? 'text-[#C5A059]'
+                                  : day.hasSlots
+                                    ? 'text-[#081C15]/55'
+                                    : 'text-[#081C15]/30'
+                              }`}
+                            >
+                              {lang === 'ar' ? day.dayLabelAr : day.dayLabelEn}
+                            </span>
+                            <span className="block text-sm font-bold leading-snug tabular-nums">
+                              {day.dayNum}
+                            </span>
+                            <span
+                              className={`block text-[9px] leading-tight ${
+                                selected
+                                  ? 'text-white/75'
+                                  : day.hasSlots
+                                    ? 'text-[#081C15]/45'
+                                    : 'text-[#081C15]/25'
+                              }`}
+                            >
+                              {lang === 'ar' ? day.monthAr : day.monthEn}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="relative">
-                      <Clock
-                        className="w-4 h-4 text-[#C5A059] absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none"
-                        aria-hidden="true"
-                      />
-                      <select
-                        aria-label={lang === 'ar' ? 'وقت الحجز' : 'Reservation Time Slot'}
-                        value={reservationSlot}
-                        onChange={(e) => setReservationSlot(e.target.value)}
-                        className="w-full ps-8 pe-2.5 py-1.5 rounded-lg bg-[#FBFBFB] border border-[#1B4332]/20 text-xs text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
-                      >
-                        {timeSlots.map((slot) => (
-                          <option key={slot.value} value={slot.value}>
-                            {lang === 'ar' ? slot.labelAr : slot.labelEn}
-                          </option>
-                        ))}
-                      </select>
+
+                    {/* Meal-Period Segmented Pill Bar */}
+                    {availablePeriods.length > 0 ? (
+                      <>
+                        <div
+                          className="flex items-center gap-0.5 p-0.5 rounded-full bg-white border border-[#1B4332]/12"
+                          role="tablist"
+                          aria-label={lang === 'ar' ? 'الفترة' : 'Time of Day'}
+                        >
+                          {availablePeriods.map((period) => {
+                            const isActive = period === activePeriod;
+                            const label =
+                              period === 'morning'
+                                ? lang === 'ar'
+                                  ? 'الصباح'
+                                  : 'Morning'
+                                : period === 'afternoon'
+                                  ? lang === 'ar'
+                                    ? 'الظهيرة'
+                                    : 'Afternoon'
+                                  : lang === 'ar'
+                                    ? 'المساء'
+                                    : 'Evening';
+                            return (
+                              <button
+                                key={period}
+                                type="button"
+                                role="tab"
+                                aria-selected={isActive}
+                                onClick={() => {
+                                  setActivePeriod(period);
+                                  const firstSlot = daySchedule.slots.find(
+                                    (s) => s.period === period,
+                                  );
+                                  if (firstSlot) {
+                                    setReservationSlot(firstSlot.value);
+                                    setTimeError(undefined);
+                                  }
+                                }}
+                                className={`flex-1 py-1 px-2 rounded-full text-[11px] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                                  isActive
+                                    ? 'bg-[#D8F3DC] text-[#1B4332] font-semibold'
+                                    : 'text-[#081C15]/60 hover:text-[#081C15] font-medium'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Time Slot Pill Grid */}
+                        <div
+                          className="grid grid-cols-3 sm:grid-cols-4 gap-1.5"
+                          role="radiogroup"
+                          aria-label={lang === 'ar' ? 'وقت الحجز' : 'Reservation Time Slot'}
+                        >
+                          {visibleSlots.map((slot) => {
+                            const isSelected = slot.value === reservationSlot;
+                            return (
+                              <button
+                                key={slot.value}
+                                type="button"
+                                role="radio"
+                                aria-checked={isSelected}
+                                onClick={() => {
+                                  setReservationSlot(slot.value);
+                                  setTimeError(undefined);
+                                }}
+                                className={`py-1.5 px-1 rounded-full border text-[11px] font-semibold tabular-nums whitespace-nowrap transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                                  isSelected
+                                    ? 'bg-[#1B4332] text-white border-[#C5A059] ring-1 ring-[#C5A059]/60 shadow-xs'
+                                    : 'bg-white text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40 hover:bg-[#F2F6F3]/60'
+                                }`}
+                              >
+                                {lang === 'ar' ? slot.labelAr : slot.labelEn}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-[11px] text-center text-[#081C15]/65 py-2">
+                        {lang === 'ar'
+                          ? 'انتهت أوقات الحجز المتاحة لليوم — يرجى اختيار يوم آخر.'
+                          : 'No reservation slots remaining for today — please choose another day.'}
+                      </p>
+                    )}
+
+                    {/* Branch Daily Hours & Last Reservation Cutoff */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 pt-1.5 border-t border-[#1B4332]/10 text-[10px] text-[#081C15]/60 tabular-nums">
+                      <span>
+                        {lang === 'ar'
+                          ? `أوقات العمل: ${formatMinutesOfDay(daySchedule.openMin, 'ar')} – ${formatMinutesOfDay(daySchedule.closeMin, 'ar')}`
+                          : `Hours: ${formatMinutesOfDay(daySchedule.openMin, 'en')} – ${formatMinutesOfDay(daySchedule.closeMin, 'en')}`}
+                      </span>
+                      <span className="font-medium text-[#1B4332]">
+                        {lang === 'ar'
+                          ? `آخر حجز: ${formatMinutesOfDay(daySchedule.lastReservationMin, 'ar')}`
+                          : `Last reservation: ${formatMinutesOfDay(daySchedule.lastReservationMin, 'en')}`}
+                      </span>
                     </div>
                   </div>
+                )}
+
+                {timeError && (
+                  <p role="alert" className="text-xs text-red-700 font-medium">
+                    {timeError}
+                  </p>
                 )}
               </div>
 
