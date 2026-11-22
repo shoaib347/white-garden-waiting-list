@@ -6,6 +6,7 @@ import {
   Download,
   LogOut,
   Minus,
+  Phone,
   Plus,
   Search,
   Sparkles,
@@ -150,6 +151,27 @@ export function HostessDashboardView({
       : activeTab === 'calling'
         ? callingList
         : completedList;
+
+  const conciergeUpdates = branchScopedEntries
+    .filter((e) => matchesQuery(e))
+    .flatMap((entry) =>
+      entry.events.map((evt) => ({
+        ...evt,
+        entryId: entry.id,
+        ticketCode: entry.ticketCode,
+        guestName: entry.guestName,
+        phone: entry.phone,
+        branchId: entry.branchId,
+      })),
+    )
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 30);
+
+  const formatClockTime = (ts: number) =>
+    new Date(ts).toLocaleTimeString(lang === 'ar' ? 'ar-SA' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   const branchName = (branchId: BranchId) => {
     const b = branches.find((item) => item.id === branchId);
@@ -644,6 +666,71 @@ export function HostessDashboardView({
           })}
         </div>
       )}
+
+      {/* Live Concierge Updates (with Customer Name & Mobile Number) */}
+      <section className="bg-white border border-[#1B4332]/15 rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-2xl font-semibold text-[#081C15]">
+            {t.ticketTimelineTitle}
+          </h2>
+          <span className="text-xs font-medium text-[#2D6A4F] bg-[#F2F5F0] px-2.5 py-1 rounded-lg tabular-nums">
+            {conciergeUpdates.length}
+          </span>
+        </div>
+
+        {conciergeUpdates.length === 0 ? (
+          <p className="text-sm text-[#081C15]/55 py-2">
+            {lang === 'ar'
+              ? 'لا توجد تحديثات مباشرة بعد.'
+              : 'No live updates yet. Guest joins, +5 min requests, calls, and seatings will appear here.'}
+          </p>
+        ) : (
+          <ul className="divide-y divide-[#1B4332]/10">
+            {conciergeUpdates.map((item) => {
+              const isExtraTime = item.messageEn.toLowerCase().includes('additional minutes');
+              return (
+                <li
+                  key={`${item.entryId}-${item.id}`}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs sm:text-sm">
+                      <span className="font-semibold text-[#081C15]">{item.guestName}</span>
+                      <span className="font-mono text-xs font-semibold text-[#1B4332]">
+                        {item.ticketCode}
+                      </span>
+                      {item.phone && (
+                        <span
+                          dir="ltr"
+                          className="inline-flex items-center gap-1 text-xs text-[#081C15]/70 font-medium tabular-nums"
+                        >
+                          <Phone className="w-3 h-3 text-[#C5A059]" aria-hidden="true" />
+                          {item.phone}
+                        </span>
+                      )}
+                      {selectedBranch === 'all' && (
+                        <span className="text-xs text-[#2D6A4F] font-medium">
+                          · {branchName(item.branchId)}
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={`text-xs sm:text-sm ${
+                        isExtraTime ? 'text-amber-800 font-medium' : 'text-[#081C15]/75'
+                      }`}
+                    >
+                      {lang === 'ar' ? item.messageAr : item.messageEn}
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono text-[#081C15]/50 tabular-nums shrink-0">
+                    {formatClockTime(item.timestamp)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       {/* Quick Walk-in Modal */}
       {walkinOpen && (

@@ -118,14 +118,59 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
     seatedAt: seatedMs,
     extraGraceMinutes: extraGraceMinutes || undefined,
     holdExpiresAt: calledMs ? calledMs + (10 + extraGraceMinutes) * 60 * 1000 : undefined,
-    events: [
-      {
-        id: `evt-${r.reservation_id}`,
-        timestamp: createdMs,
-        messageEn: `Waitlist entry registered (${code}).`,
-        messageAr: `تم تسجيل التذكرة (${code}).`,
-      },
-    ],
+    events: (() => {
+      const evts: WaitlistEntry['events'] = [
+        {
+          id: `evt-${r.reservation_id}-join`,
+          timestamp: createdMs,
+          messageEn: `Joined waitlist (${code}).`,
+          messageAr: `انضم لقائمة الانتظار (${code}).`,
+        },
+      ];
+      if (extraGraceMinutes > 0) {
+        const count = Math.round(extraGraceMinutes / 5);
+        for (let i = 0; i < count; i++) {
+          evts.unshift({
+            id: `evt-${r.reservation_id}-ext-${i}`,
+            timestamp: (calledMs ?? createdMs) + (i + 1) * 1000,
+            messageEn: 'Guest requested 5 additional minutes.',
+            messageAr: 'طلب الضيف ٥ دقائق إضافية.',
+          });
+        }
+      }
+      if (calledMs) {
+        evts.unshift({
+          id: `evt-${r.reservation_id}-call`,
+          timestamp: calledMs,
+          messageEn: 'Table ready alert sent to live ticket tracker.',
+          messageAr: 'تم إرسال إشعار جاهزية الطاولة لشاشة التذكرة المباشرة.',
+        });
+      }
+      if (seatedMs) {
+        evts.unshift({
+          id: `evt-${r.reservation_id}-seat`,
+          timestamp: seatedMs,
+          messageEn: 'Guest seated.',
+          messageAr: 'تم إجلاس الضيف.',
+        });
+      }
+      if (uiStatus === 'cancelled') {
+        evts.unshift({
+          id: `evt-${r.reservation_id}-cancel`,
+          timestamp: createdMs + 500,
+          messageEn: 'Reservation cancelled.',
+          messageAr: 'تم إلغاء التذكرة.',
+        });
+      } else if (uiStatus === 'no_show') {
+        evts.unshift({
+          id: `evt-${r.reservation_id}-noshow`,
+          timestamp: (calledMs ?? createdMs) + 500,
+          messageEn: 'Marked as no-show.',
+          messageAr: 'تم التسجيل كعدم حضور.',
+        });
+      }
+      return evts.sort((a, b) => b.timestamp - a.timestamp);
+    })(),
   };
 }
 
@@ -359,6 +404,54 @@ export default function App() {
               nextHoldExpires = new Date(payload.notified_at).getTime() + (10 + (nextGrace ?? 0)) * 60 * 1000;
             }
 
+            const nowTs = Date.now();
+            let liveEvt: WaitlistEntry['events'][number] | null = null;
+            if (isExtend) {
+              liveEvt = {
+                id: `evt-sock-ext-${nowTs}`,
+                timestamp: nowTs,
+                messageEn: 'Guest requested 5 additional minutes.',
+                messageAr: 'طلب الضيف ٥ دقائق إضافية.',
+              };
+            } else if (safeNextStatus === 'called' && e.status !== 'called') {
+              liveEvt = {
+                id: `evt-sock-call-${nowTs}`,
+                timestamp: nowTs,
+                messageEn: 'Table ready alert sent to live ticket tracker.',
+                messageAr: 'تم إرسال إشعار جاهزية الطاولة لشاشة التذكرة المباشرة.',
+              };
+            } else if (safeNextStatus === 'seated' && e.status !== 'seated') {
+              liveEvt = {
+                id: `evt-sock-seat-${nowTs}`,
+                timestamp: nowTs,
+                messageEn: 'Guest seated.',
+                messageAr: 'تم إجلاس الضيف.',
+              };
+            } else if (safeNextStatus === 'cancelled' && e.status !== 'cancelled') {
+              liveEvt = {
+                id: `evt-sock-cancel-${nowTs}`,
+                timestamp: nowTs,
+                messageEn: 'Reservation cancelled.',
+                messageAr: 'تم إلغاء التذكرة.',
+              };
+            } else if (safeNextStatus === 'no_show' && e.status !== 'no_show') {
+              liveEvt = {
+                id: `evt-sock-noshow-${nowTs}`,
+                timestamp: nowTs,
+                messageEn: 'Marked as no-show.',
+                messageAr: 'تم التسجيل كعدم حضور.',
+              };
+            }
+
+            // Avoid duplicating an identical event created within the last 3 seconds locally
+            const alreadyLogged =
+              liveEvt &&
+              e.events.some(
+                (existing) =>
+                  existing.messageEn === liveEvt!.messageEn &&
+                  Math.abs(existing.timestamp - liveEvt!.timestamp) < 3000,
+              );
+
             return {
               ...e,
               status: isExtend ? e.status : safeNextStatus,
@@ -366,6 +459,7 @@ export default function App() {
               seatedAt: payload.seated_at ? new Date(payload.seated_at).getTime() : e.seatedAt,
               extraGraceMinutes: nextGrace || undefined,
               holdExpiresAt: nextHoldExpires,
+              events: liveEvt && !alreadyLogged ? [liveEvt, ...e.events] : e.events,
             };
           }
           return e;
