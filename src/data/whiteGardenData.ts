@@ -235,7 +235,7 @@ export const COPY = {
     closedStatus: 'Waitlist Paused',
     partiesAhead: (n: number) => (n === 1 ? '1 party ahead' : `${n} parties ahead`),
     waitMins: (m: number) => `~${m} mins wait`,
-    joinFormHeading: 'Guest Details & Preferences',
+    joinFormHeading: 'Reserve Your Table',
     joinFormSub: '',
     fullNameLabel: 'Full Name',
     fullNamePlaceholder: '',
@@ -339,7 +339,7 @@ export const COPY = {
     partiesAhead: (n: number) =>
       n === 1 ? 'مجموعة واحدة قبلك' : n === 2 ? 'مجموعتان قبلك' : `${n} مجموعات قبلك`,
     waitMins: (m: number) => `~${m} دقيقة انتظار`,
-    joinFormHeading: 'بيانات الضيف وتفضيلات الجلوس',
+    joinFormHeading: 'احجز طاولتك',
     joinFormSub: '',
     fullNameLabel: 'الاسم الكامل',
     fullNamePlaceholder: '',
