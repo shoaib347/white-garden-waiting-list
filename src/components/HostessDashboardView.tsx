@@ -3,6 +3,7 @@ import {
   BellRing,
   CheckCircle2,
   Clock,
+  Download,
   LogOut,
   Minus,
   Plus,
@@ -160,6 +161,75 @@ export function HostessDashboardView({
     return a ? (lang === 'ar' ? a.labelAr : a.labelEn) : areaId;
   };
 
+  const handleExportCSV = () => {
+    const exportList = branchScopedEntries
+      .filter((e) => matchesQuery(e))
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    if (exportList.length === 0) {
+      window.alert(lang === 'ar' ? 'لا توجد بيانات للتصدير حالياً.' : 'No waitlist records to export yet.');
+      return;
+    }
+
+    const csvEscape = (val: string | number | undefined | null) =>
+      `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const headers = [
+      'Ticket Code',
+      'Branch',
+      'Guest Name',
+      'Mobile',
+      'Party Size',
+      'Seating Area',
+      'Source',
+      'Status',
+      'Table',
+      'Date',
+      'Joined Time',
+      'Called Time',
+      'Seated Time',
+      'Extra Grace (min)',
+      'Notes',
+    ];
+
+    const rows = exportList.map((entry) => {
+      const joinedDate = new Date(entry.createdAt);
+      const calledStr = entry.calledAt ? new Date(entry.calledAt).toLocaleTimeString() : '';
+      const seatedStr = entry.seatedAt ? new Date(entry.seatedAt).toLocaleTimeString() : '';
+      return [
+        csvEscape(entry.ticketCode),
+        csvEscape(branchName(entry.branchId)),
+        csvEscape(entry.guestName),
+        csvEscape(entry.phone),
+        entry.partySize,
+        csvEscape(areaName(entry.seatingArea)),
+        csvEscape(entry.source === 'walkin' ? 'Walk-in' : 'Online'),
+        csvEscape(entry.status),
+        csvEscape(entry.tableNumber || ''),
+        csvEscape(joinedDate.toLocaleDateString()),
+        csvEscape(joinedDate.toLocaleTimeString()),
+        csvEscape(calledStr),
+        csvEscape(seatedStr),
+        entry.extraGraceMinutes ?? 0,
+        csvEscape(entry.notes || ''),
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    // UTF-8 BOM so Microsoft Excel properly renders Arabic characters
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStamp = new Date().toISOString().split('T')[0];
+    const branchSlug = selectedBranch === 'all' ? 'all_branches' : selectedBranch;
+    link.setAttribute('href', url);
+    link.setAttribute('download', `white_garden_${branchSlug}_${dateStamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleWalkinSubmit = (e: FormEvent) => {
     e.preventDefault();
     const trimmed = walkinName.trim();
@@ -264,6 +334,17 @@ export function HostessDashboardView({
               <VolumeX className="w-4 h-4" aria-hidden="true" />
             )}
             <span>{audioEnabled ? t.audioChimeOn : t.audioChimeOff}</span>
+          </button>
+
+          {/* Export CSV / Excel Download */}
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            title={lang === 'ar' ? 'تصدير السجل إلى Excel / CSV' : 'Export Waitlist History to Excel / CSV'}
+            className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B4332]/20 bg-white hover:bg-[#F7F9F6] text-[#1B4332] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+          >
+            <Download className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            <span>{lang === 'ar' ? 'تصدير CSV' : 'Export CSV'}</span>
           </button>
 
           {/* + Quick Walk-in CTA */}
