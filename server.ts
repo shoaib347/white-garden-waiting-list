@@ -67,18 +67,42 @@ let memBranchSettings: Record<string, boolean> = {
 };
 
 let isPrismaAvailable = false;
+let lastDbError: string | null = null;
 const prisma = new PrismaClient();
 
-// Test Prisma Database Connection
-async function checkDatabaseConnection() {
-  try {
-    await prisma.$connect();
-    isPrismaAvailable = true;
-    console.log('✅ Connected to PostgreSQL database via Prisma.');
-  } catch (err: any) {
+// Test & retry Prisma Database Connection (handles Neon Serverless cold-wake)
+async function checkDatabaseConnection(maxAttempts = 4): Promise<boolean> {
+  if (!process.env.DATABASE_URL) {
+    lastDbError = 'DATABASE_URL environment variable is not set';
     isPrismaAvailable = false;
-    console.log('ℹ️ Running in memory / demo mode (PostgreSQL offline or DATABASE_URL not set).');
+    console.error('❌ DATABASE_URL is not set; running in memory fallback.');
+    return false;
   }
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await prisma.$connect();
+      await prisma.$queryRaw`SELECT 1`;
+      isPrismaAvailable = true;
+      lastDbError = null;
+      console.log(`✅ Connected to Neon PostgreSQL database via Prisma (attempt ${attempt}).`);
+      return true;
+    } catch (err: any) {
+      lastDbError = err?.message || String(err);
+      isPrismaAvailable = false;
+      console.error(`⚠️ Prisma DB connection attempt ${attempt}/${maxAttempts} failed:`, lastDbError);
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
+      }
+    }
+  }
+  return false;
+}
+
+async function ensureDbConnected(): Promise<boolean> {
+  if (isPrismaAvailable) return true;
+  if (!process.env.DATABASE_URL) return false;
+  return checkDatabaseConnection(2);
 }
 
 checkDatabaseConnection();
@@ -317,6 +341,8 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     brand: 'White Garden — Curating Moments',
     database: isPrismaAvailable ? 'PostgreSQL (Prisma)' : 'Memory / Standalone',
+    has_database_url: Boolean(process.env.DATABASE_URL),
+    db_error: isPrismaAvailable ? null : lastDbError,
     locations: ['olaya', 'roshn', 'sixty', 'theview', 'ammariayh'],
     time: new Date().toISOString(),
   });
@@ -437,6 +463,7 @@ async function buildPhoneVisitCounts(): Promise<Map<string, number>> {
 
 // Fetch queue and stats (enriched with cross-branch visit_count for returning guest detection)
 app.get('/api/v1/queue', async (req, res) => {
+  await ensureDbConnected();
   const branchId = (req.query.branch_id as string) || 'roshn';
   const visitCounts = await buildPhoneVisitCounts();
 
@@ -574,10 +601,15 @@ app.post('/api/v1/create', async (req, res) => {
     const parsedParty = parseInt(party_size, 10) || 2;
     const now = new Date();
 
+    await ensureDbConnected();
     if (isPrismaAvailable) {
       try {
-        const count = await prisma.reservation.count({ where: { branch_id: normBranch } });
-        const queueNumber = count + 1;
+        const latest = await prisma.reservation.findFirst({
+          where: { branch_id: normBranch },
+          orderBy: { queue_number: 'desc' },
+          select: { queue_number: true },
+        });
+        const queueNumber = (latest?.queue_number || 0) + 1;
         const ticketCode = `${prefix}-${100 + queueNumber}`;
 
         const created = await prisma.reservation.create({
