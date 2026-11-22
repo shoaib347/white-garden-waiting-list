@@ -93,6 +93,7 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
   const cleanNotes = rawNotes
     .replace(/\[\+5m\]/g, '')
     .replace(/\[WALKIN\]/g, '')
+    .replace(/\s*\|?\s*Table\s+G-\d+/gi, '')
     .trim();
 
   let uiStatus: WaitlistEntry['status'] = 'waiting';
@@ -721,8 +722,8 @@ export default function App() {
     } else if (action === 'seat') {
       showToast(
         lang === 'ar'
-          ? `تم إجلاس ${target.guestName} على طاولة ${tableNumber || 'G-10'}`
-          : `${target.guestName} seated at table ${tableNumber || 'G-10'}`,
+          ? (tableNumber ? `تم إجلاس ${target.guestName} على طاولة ${tableNumber}` : `تم إجلاس ${target.guestName}`)
+          : (tableNumber ? `${target.guestName} seated at table ${tableNumber}` : `${target.guestName} seated`),
         'info',
       );
     } else if (action === 'extend_5m') {
@@ -758,7 +759,7 @@ export default function App() {
         body: JSON.stringify({
           reservation_id: target.ticketCode.replace(/^#/, ''),
           status: serverStatus,
-          reason: action === 'seat' ? `Table ${tableNumber || 'G-10'}` : undefined,
+          reason: action === 'seat' && tableNumber ? `Table ${tableNumber}` : undefined,
         }),
       });
     } catch (e) {

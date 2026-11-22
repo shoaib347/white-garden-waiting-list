@@ -594,7 +594,7 @@ export function HostessDashboardView({
 
                       <button
                         type="button"
-                        onClick={() => onTicketAction(entry.id, 'seat', tableVal || 'G-08')}
+                        onClick={() => onTicketAction(entry.id, 'seat', tableVal.trim() || undefined)}
                         className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#F2F6F3] hover:bg-[#D8F3DC] border border-[#1B4332]/20 text-[#1B4332] text-xs sm:text-sm font-medium whitespace-nowrap transition-colors cursor-pointer"
                       >
                         {t.actionSeatParty}
@@ -625,7 +625,7 @@ export function HostessDashboardView({
 
                       <button
                         type="button"
-                        onClick={() => onTicketAction(entry.id, 'seat', tableVal || 'G-10')}
+                        onClick={() => onTicketAction(entry.id, 'seat', tableVal.trim() || undefined)}
                         className="min-h-[40px] px-4 py-2 rounded-xl bg-[#1B4332] hover:bg-[#081C15] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#95D5B2]" aria-hidden="true" />
@@ -655,7 +655,7 @@ export function HostessDashboardView({
                     entry.status === 'no_show') && (
                     <span className="text-xs sm:text-sm font-medium text-[#1B4332] tabular-nums">
                       {entry.status === 'seated'
-                        ? `${t.seatedAtTable}: ${entry.tableNumber || 'G-12'}`
+                        ? (entry.tableNumber ? `${t.seatedAtTable}: ${entry.tableNumber}` : (lang === 'ar' ? 'تم الإجلاس' : 'Seated'))
                         : entry.status === 'cancelled'
                           ? t.statusCancelled
                           : t.statusNoShow}

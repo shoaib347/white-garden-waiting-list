@@ -249,7 +249,7 @@ export function TicketTrackerView({
                     {ticket.status === 'seated' && (
                       <>
                         <span className="font-display text-3xl font-semibold text-[#1B4332]">
-                          {ticket.tableNumber || 'G-12'}
+                          {ticket.tableNumber || (lang === 'ar' ? 'تم الإجلاس' : 'Seated')}
                         </span>
                         <span className="text-xs text-[#081C15]/70 mt-0.5">
                           {t.seatedAtTable}

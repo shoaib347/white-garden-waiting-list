@@ -296,7 +296,7 @@ export function transitionTicket(
     }
 
     if (action === 'seat') {
-      const assignedTable = options.tableNumber?.trim() || entry.tableNumber || 'G-12';
+      const assignedTable = options.tableNumber?.trim() || entry.tableNumber || undefined;
       return {
         ...entry,
         status: 'seated',
@@ -307,8 +307,8 @@ export function transitionTicket(
           {
             id: `evt-${now}-seat`,
             timestamp: now,
-            messageEn: `Party seated at table ${assignedTable}.`,
-            messageAr: `تم إجلاس الضيوف على طاولة ${assignedTable}.`,
+            messageEn: assignedTable ? `Party seated at table ${assignedTable}.` : 'Party seated.',
+            messageAr: assignedTable ? `تم إجلاس الضيوف على طاولة ${assignedTable}.` : 'تم إجلاس الضيوف.',
           },
           ...entry.events,
         ],
