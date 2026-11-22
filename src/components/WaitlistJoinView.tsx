@@ -492,12 +492,10 @@ export function WaitlistJoinView({
                     }`}
                   />
                 </div>
-                {errors.phone ? (
+                {errors.phone && (
                   <p role="alert" className="text-xs text-red-700 font-medium">
                     {errors.phone}
                   </p>
-                ) : (
-                  <p className="text-[11px] text-[#081C15]/55">{t.phoneHint}</p>
                 )}
               </div>
 
