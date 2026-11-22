@@ -675,7 +675,7 @@ export function HostessDashboardView({
                 <span className="block text-xs font-medium text-[#081C15]">
                   {t.seatingAreaLabel}
                 </span>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {SEATING_AREAS.map((area) => {
                     const active = walkinArea === area.id;
                     return (

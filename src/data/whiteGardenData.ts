@@ -129,13 +129,6 @@ export const SEATING_AREAS: {
     descEn: 'Climate-controlled velvet & marble dining',
     descAr: 'أجواء مكيفة مع مقاعد مخملية ورخامية',
   },
-  {
-    id: 'pergola',
-    labelEn: 'Fountain Pergola',
-    labelAr: 'برجولا النافورة',
-    descEn: 'Tranquil courtyard beside water feature',
-    descAr: 'فناء هادئ بجانب النافورة المائية',
-  },
 ];
 
 export const SPECIAL_REQUEST_OPTIONS: {

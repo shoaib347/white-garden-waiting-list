@@ -361,7 +361,7 @@ export function WaitlistJoinView({
                 <span className="block text-sm font-medium text-[#081C15]">
                   {t.seatingAreaLabel}
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   {SEATING_AREAS.map((area) => {
                     const active = seatingArea === area.id;
                     return (
@@ -370,21 +370,14 @@ export function WaitlistJoinView({
                         type="button"
                         aria-pressed={active}
                         onClick={() => setSeatingArea(area.id)}
-                        className={`p-3.5 rounded-xl border text-start transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                        className={`px-3.5 py-2.5 rounded-xl border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                           active
-                            ? 'bg-[#1B4332] text-white border-[#1B4332]'
+                            ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
                             : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                         }`}
                       >
                         <p className="text-xs sm:text-sm font-semibold leading-snug">
                           {lang === 'ar' ? area.labelAr : area.labelEn}
-                        </p>
-                        <p
-                          className={`text-[11px] mt-1 leading-snug ${
-                            active ? 'text-[#D8F3DC]' : 'text-[#081C15]/60'
-                          }`}
-                        >
-                          {lang === 'ar' ? area.descAr : area.descEn}
                         </p>
                       </button>
                     );
