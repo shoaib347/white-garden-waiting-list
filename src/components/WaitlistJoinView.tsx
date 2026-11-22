@@ -170,7 +170,7 @@ export function WaitlistJoinView({
               <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
                 {t.selectBranchHeading}
               </h1>
-              <p className="text-sm text-[#081C15]/65">{t.selectBranchSub}</p>
+              {t.selectBranchSub && <p className="text-sm text-[#081C15]/65">{t.selectBranchSub}</p>}
             </div>
             {onOpenMap && (
               <button
@@ -327,7 +327,7 @@ export function WaitlistJoinView({
                 <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
                   {t.joinFormHeading}
                 </h2>
-                <p className="text-sm text-[#081C15]/65">{t.joinFormSub}</p>
+                {t.joinFormSub && <p className="text-sm text-[#081C15]/65">{t.joinFormSub}</p>}
               </div>
               <div className="text-end shrink-0">
                 <p className="text-xs text-[#081C15]/60">
