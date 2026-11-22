@@ -726,6 +726,7 @@ export default function App() {
               onAddWalkin={handleAddWalkin}
               staffUser={staffAuth}
               onLogout={handleStaffLogout}
+              onSelectBranch={(id) => setSelectedBranch(id)}
             />
           ) : (
             <StaffLoginView lang={lang} onLoginSuccess={handleStaffLogin} />

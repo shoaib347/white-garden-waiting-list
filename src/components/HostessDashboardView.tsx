@@ -50,6 +50,7 @@ interface HostessDashboardViewProps {
   }) => void;
   staffUser?: StaffAuthSession | null;
   onLogout?: () => void;
+  onSelectBranch?: (branchId: BranchId | 'all') => void;
 }
 
 type QueueTab = 'waiting' | 'calling' | 'completed';
@@ -66,6 +67,7 @@ export function HostessDashboardView({
   onAddWalkin,
   staffUser,
   onLogout,
+  onSelectBranch,
 }: HostessDashboardViewProps) {
   const t = COPY[lang];
   const [activeTab, setActiveTab] = useState<QueueTab>('waiting');
@@ -205,6 +207,22 @@ export function HostessDashboardView({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {staffUser?.role === 'admin' && onSelectBranch && (
+            <select
+              aria-label={t.selectBranchHeading}
+              value={selectedBranch}
+              onChange={(e) => onSelectBranch(e.target.value as BranchId | 'all')}
+              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B4332]/20 bg-white text-[#081C15] text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
+            >
+              <option value="all">{t.allBranches}</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {lang === 'ar' ? branch.nameAr : branch.nameEn}
+                </option>
+              ))}
+            </select>
+          )}
+
           {/* Waitlist Open/Closed Toggle for active branch */}
           <button
             type="button"

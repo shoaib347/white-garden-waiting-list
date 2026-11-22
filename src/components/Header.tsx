@@ -1,4 +1,4 @@
-import { ChevronDown, Globe, Lock } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 import { COPY, type ActiveView, type Language } from '../data/whiteGardenData';
 import type { BranchId, BranchInfo } from '../utils/waitlistLogic';
 
@@ -49,30 +49,23 @@ export function Header({
   activeView,
   onSelectView,
   branches,
-  selectedBranch,
-  onSelectBranch,
   lockedBranchId = null,
 }: HeaderProps) {
   const t = COPY[lang];
 
-  const tabs: { id: ActiveView; label: string }[] = [
-    { id: 'join', label: t.navJoin },
-    { id: 'ticket', label: t.navTicket },
-    { id: 'hostess', label: t.navHostess },
-  ];
-
-  const branchValue =
-    activeView !== 'hostess' && selectedBranch === 'all' ? branches[1].id : selectedBranch;
-
   return (
     <header className="sticky top-0 z-40 bg-[#FBFBFB]/90 backdrop-blur-md border-b border-[#1B4332]/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-4 sm:gap-8">
-        {/* Zone 1: Single-line luxury brand wordmark */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-4">
+        {/* Zone 1: Official White Garden Brand Logo */}
         <button
           type="button"
-          onClick={() => onSelectView('join')}
+          onClick={() => {
+            if (activeView !== 'hostess') {
+              onSelectView('join');
+            }
+          }}
           aria-label="White Garden — وايت قاردن"
-          className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded-xl hover:opacity-90 transition-all shrink-0 py-1"
+          className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded-xl hover:opacity-90 transition-all shrink-0 py-1 cursor-pointer"
         >
           <img
             src="/white-garden-logo.svg"
@@ -81,36 +74,9 @@ export function Header({
           />
         </button>
 
-        {/* Zone 2: Desktop Mode Switcher Tabs */}
-        <nav
-          aria-label="Primary sections"
-          role="tablist"
-          className="hidden md:flex items-center gap-1 bg-[#F2F5F0] p-1 rounded-xl border border-[#1B4332]/10"
-        >
-          {tabs.map((tab) => {
-            const isActive = activeView === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onSelectView(tab.id)}
-                className={`px-3.5 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
-                  isActive
-                    ? 'bg-[#1B4332] text-white shadow-sm'
-                    : 'text-[#1B4332]/80 hover:text-[#081C15] hover:bg-white/70'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Zone 3: Branch Selector + Language Toggle */}
+        {/* Zone 2: Locked Branch Badge (staff only) + Language Toggle */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {lockedBranchId ? (
+          {lockedBranchId && (
             <div
               title={lang === 'ar' ? 'الفرع المقفل حسب تسجيل الدخول' : 'Locked to signed-in branch'}
               className="inline-flex items-center gap-1.5 bg-[#F2F5F0] border border-[#1B4332]/20 text-[#1B4332] text-xs sm:text-sm font-semibold rounded-lg px-3 py-2 min-h-[38px] max-w-[160px] sm:max-w-[210px] truncate"
@@ -123,71 +89,19 @@ export function Header({
                 })()}
               </span>
             </div>
-          ) : (
-            <div className="relative">
-              <label htmlFor="header-branch-select" className="sr-only">
-                {t.selectBranchHeading}
-              </label>
-              <select
-                id="header-branch-select"
-                value={branchValue}
-                onChange={(e) => onSelectBranch(e.target.value as BranchId | 'all')}
-                className="appearance-none bg-white border border-[#1B4332]/15 hover:border-[#1B4332]/35 text-[#081C15] text-xs sm:text-sm font-medium rounded-lg ps-3 pe-8 py-2 min-h-[38px] max-w-[140px] sm:max-w-[200px] truncate transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
-              >
-                {activeView === 'hostess' && (
-                  <option value="all">{t.allBranches}</option>
-                )}
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {lang === 'ar' ? branch.nameAr : branch.nameEn}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="w-4 h-4 text-[#1B4332]/70 pointer-events-none absolute top-1/2 -translate-y-1/2 end-2.5"
-                aria-hidden="true"
-              />
-            </div>
           )}
 
           <button
             type="button"
             onClick={onToggleLang}
             aria-label={lang === 'en' ? 'Switch to Arabic' : 'Switch to English'}
-            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] text-xs sm:text-sm font-semibold text-[#1B4332] bg-white border border-[#1B4332]/15 hover:border-[#C5A059] hover:bg-[#F7F9F6] rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            className="inline-flex items-center gap-1.5 px-3 py-2 min-h-[38px] text-xs sm:text-sm font-semibold text-[#1B4332] bg-white border border-[#1B4332]/15 hover:border-[#C5A059] hover:bg-[#F7F9F6] rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
           >
             <Globe className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
             <span>{t.switchLang}</span>
           </button>
         </div>
       </div>
-
-      {/* Mobile compact tab strip (<= 44px height so total sticky header stays well below 15% of mobile viewport) */}
-      <nav
-        aria-label="Mobile sections"
-        role="tablist"
-        className="md:hidden grid grid-cols-3 border-t border-[#1B4332]/10 bg-[#FBFBFB]"
-      >
-        {tabs.map((tab) => {
-          const isActive = activeView === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => onSelectView(tab.id)}
-              className={`py-2.5 px-1.5 text-[11px] font-medium text-center transition-colors whitespace-nowrap truncate border-b-2 ${
-                isActive
-                  ? 'border-[#1B4332] text-[#1B4332] bg-[#D8F3DC]/25 font-semibold'
-                  : 'border-transparent text-[#081C15]/65 hover:text-[#081C15]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </nav>
     </header>
   );
 }
