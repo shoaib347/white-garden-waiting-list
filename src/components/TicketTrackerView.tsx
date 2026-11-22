@@ -4,14 +4,12 @@ import {
   CheckCircle2,
   Clock,
   Leaf,
-  MapPin,
   Sparkles,
   Timer,
   Users,
   XCircle,
 } from 'lucide-react';
 import {
-  AMMARIAYH_IMAGE_URL,
   COPY,
   SEATING_AREAS,
   SPECIAL_REQUEST_OPTIONS,
@@ -48,7 +46,6 @@ export function TicketTrackerView({
   const t = COPY[lang];
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [imgFailed, setImgFailed] = useState(false);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -157,15 +154,12 @@ export function TicketTrackerView({
   const statusConfig = statusConfigMap[ticket.status] ?? statusConfigMap.waiting;
 
   const StatusIcon = statusConfig.icon;
-  const branchPhoto = branch.imageUrl || AMMARIAYH_IMAGE_URL;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-6">
+    <div className="max-w-lg mx-auto px-4 sm:px-6 py-6 sm:py-10">
 
-      {/* Balanced 2-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Mobile-First Digital Ticket Pass */}
-        <div className="lg:col-span-6">
+      {/* Centered Digital Ticket Pass */}
+      <div>
           <div className="bg-white border border-[#1B4332]/15 rounded-3xl overflow-hidden shadow-sm">
             {/* Pass Header Band */}
             <div className="bg-[#081C15] text-white px-6 py-5 border-b border-[#C5A059]/40 flex items-center justify-between gap-4">
@@ -388,47 +382,6 @@ export function TicketTrackerView({
             </div>
           </div>
         </div>
-
-        {/* Right Column: Branch Context & Live Timeline */}
-        <div className="lg:col-span-6 space-y-6">
-          <div className="bg-white border border-[#1B4332]/15 rounded-2xl overflow-hidden">
-            <div className="relative h-48 bg-[#1B4332]">
-              {!imgFailed ? (
-                <img
-                  src={branchPhoto}
-                  alt={lang === 'ar' ? branch.nameAr : branch.nameEn}
-                  referrerPolicy="no-referrer"
-                  onError={() => setImgFailed(true)}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#1B4332] to-[#081C15] flex items-center justify-center">
-                  <Leaf className="w-8 h-8 text-[#C5A059]" aria-hidden="true" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#081C15]/75 via-transparent to-transparent" />
-              <div className="absolute bottom-4 inset-x-5 text-white">
-                <p className="font-display text-2xl font-semibold">
-                  {lang === 'ar' ? branch.nameAr : branch.nameEn}
-                </p>
-                <p className="text-xs text-white/85">
-                  {lang === 'ar' ? branch.taglineAr : branch.taglineEn}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-[#081C15]/75">
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
-                {lang === 'ar' ? branch.districtAr : branch.districtEn}
-              </span>
-              <span className="tabular-nums">
-                {t.ticketBranchHours}: {lang === 'ar' ? branch.hoursAr : branch.hoursEn}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
