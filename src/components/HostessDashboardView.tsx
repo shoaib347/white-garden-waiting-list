@@ -422,43 +422,44 @@ export function HostessDashboardView({
         </div>
       </div>
 
-      {/* 4-Column Live Statistics Strip */}
-      <section aria-label="Queue metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#1B4332]/12 rounded-2xl p-4 sm:p-5">
-          <p className="text-xs font-medium text-[#081C15]/60">{t.statWaiting}</p>
-          <p className="text-3xl font-semibold text-[#081C15] tabular-nums mt-2">
+      {/* 4-Column Compact Live Statistics Strip */}
+      <section aria-label="Queue metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="bg-white border border-[#1B4332]/12 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-medium text-[#081C15]/65">{t.statWaiting}</p>
+          <p className="text-lg font-semibold text-[#081C15] tabular-nums leading-none">
             {stats.totalWaiting}
           </p>
         </div>
 
-        <div className="bg-white border border-[#1B4332]/12 rounded-2xl p-4 sm:p-5">
-          <p className="text-xs font-medium text-[#081C15]/60">{t.statCalling}</p>
-          <p className="text-3xl font-semibold text-[#C5A059] tabular-nums mt-2">
+        <div className="bg-white border border-[#1B4332]/12 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-medium text-[#081C15]/65">{t.statCalling}</p>
+          <p className="text-lg font-semibold text-[#C5A059] tabular-nums leading-none">
             {stats.nowCalling}
           </p>
         </div>
 
-        <div className="bg-white border border-[#1B4332]/12 rounded-2xl p-4 sm:p-5">
-          <p className="text-xs font-medium text-[#081C15]/60">{t.statSeated}</p>
-          <p className="text-3xl font-semibold text-[#1B4332] tabular-nums mt-2">
+        <div className="bg-white border border-[#1B4332]/12 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-medium text-[#081C15]/65">{t.statSeated}</p>
+          <p className="text-lg font-semibold text-[#1B4332] tabular-nums leading-none">
             {stats.seatedToday}
           </p>
         </div>
 
-        <div className="bg-white border border-[#1B4332]/12 rounded-2xl p-4 sm:p-5">
-          <p className="text-xs font-medium text-[#081C15]/60">{t.statAvgWait}</p>
-          <p className="text-3xl font-semibold text-[#081C15] tabular-nums mt-2">
-            {stats.avgWaitMinutes} <span className="text-base font-medium text-[#081C15]/60">{t.minsUnit}</span>
+        <div className="bg-white border border-[#1B4332]/12 rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-medium text-[#081C15]/65">{t.statAvgWait}</p>
+          <p className="text-lg font-semibold text-[#081C15] tabular-nums leading-none">
+            {stats.avgWaitMinutes}{' '}
+            <span className="text-[11px] font-medium text-[#081C15]/60">{t.minsUnit}</span>
           </p>
         </div>
       </section>
 
-      {/* Queue Tabs + Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Compact Queue Tabs + Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         <div
           role="tablist"
           aria-label="Queue stages"
-          className="inline-flex flex-wrap items-center gap-1 p-1 bg-[#EEF2EC] rounded-xl border border-[#1B4332]/10"
+          className="inline-flex flex-wrap items-center gap-0.5 p-0.5 bg-[#EEF2EC] rounded-lg border border-[#1B4332]/10"
         >
           {(
             [
@@ -475,22 +476,22 @@ export function HostessDashboardView({
                 role="tab"
                 aria-selected={active}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap tabular-nums inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                className={`h-7 px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap tabular-nums inline-flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                   active
-                    ? 'bg-white text-[#081C15] shadow-sm font-semibold'
+                    ? 'bg-white text-[#081C15] shadow-xs font-semibold'
                     : 'text-[#081C15]/70 hover:text-[#081C15]'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className="text-xs text-[#2D6A4F] font-semibold">({tab.count})</span>
+                <span className="text-[11px] text-[#2D6A4F] font-semibold">({tab.count})</span>
               </button>
             );
           })}
         </div>
 
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full md:w-64">
           <Search
-            className="w-4 h-4 text-[#081C15]/45 absolute top-1/2 -translate-y-1/2 start-3.5 pointer-events-none"
+            className="w-3.5 h-3.5 text-[#081C15]/45 absolute top-1/2 -translate-y-1/2 start-2.5 pointer-events-none"
             aria-hidden="true"
           />
           <input
@@ -499,7 +500,7 @@ export function HostessDashboardView({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
             aria-label={t.searchPlaceholder}
-            className="w-full ps-10 pe-4 py-2.5 rounded-xl bg-white border border-[#1B4332]/15 text-sm text-[#081C15] placeholder:text-[#081C15]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            className="w-full h-7 ps-8 pe-3 py-1 rounded-lg bg-white border border-[#1B4332]/15 text-[11px] text-[#081C15] placeholder:text-[#081C15]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
           />
         </div>
       </div>
