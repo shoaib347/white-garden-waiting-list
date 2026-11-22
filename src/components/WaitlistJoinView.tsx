@@ -63,12 +63,13 @@ export function WaitlistJoinView({
   const [guestName, setGuestName] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
   const [partySize, setPartySize] = useState(2);
-  const [timeMode, setTimeMode] = useState<'now' | 'scheduled'>('now');
+  const [timeMode, setTimeMode] = useState<'now' | 'scheduled' | null>(null);
   const [reservationDate, setReservationDate] = useState<string>(() => toLocalYmd(new Date()));
   const [activePeriod, setActivePeriod] = useState<MealPeriod>('evening');
   const [reservationSlot, setReservationSlot] = useState<string>('');
   const [timeError, setTimeError] = useState<string | undefined>(undefined);
-  const [seatingArea, setSeatingArea] = useState<SeatingAreaId>('outdoor_view');
+  const [seatingArea, setSeatingArea] = useState<SeatingAreaId | null>(null);
+  const [seatingError, setSeatingError] = useState<string | undefined>(undefined);
   const [specialRequests, setSpecialRequests] = useState<SpecialRequestId[]>([]);
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
@@ -187,20 +188,37 @@ export function WaitlistJoinView({
         phoneResult.errorKey === 'empty' ? t.errPhoneEmpty : t.errPhoneInvalid;
     }
 
-    if (timeMode === 'scheduled' && !reservationSlot) {
+    let hasCustomError = false;
+    if (!timeMode) {
+      setTimeError(
+        lang === 'ar'
+          ? 'يرجى اختيار وقت الحجز.'
+          : 'Please select a reservation time.',
+      );
+      hasCustomError = true;
+    } else if (timeMode === 'scheduled' && !reservationSlot) {
       setTimeError(
         lang === 'ar'
           ? 'يرجى اختيار وقت حجز متاح.'
           : 'Please select an available reservation time.',
       );
-      if (nextErrors.name || nextErrors.phone) {
-        setErrors(nextErrors);
-      }
-      return;
+      hasCustomError = true;
+    } else {
+      setTimeError(undefined);
     }
-    setTimeError(undefined);
 
-    if (nextErrors.name || nextErrors.phone) {
+    if (!seatingArea) {
+      setSeatingError(
+        lang === 'ar'
+          ? 'يرجى اختيار منطقة الجلوس المفضلة.'
+          : 'Please select your preferred seating area.',
+      );
+      hasCustomError = true;
+    } else {
+      setSeatingError(undefined);
+    }
+
+    if (nextErrors.name || nextErrors.phone || hasCustomError || !seatingArea) {
       setErrors(nextErrors);
       return;
     }
@@ -521,7 +539,7 @@ export function WaitlistJoinView({
                 <span className="block text-xs font-medium text-[#081C15]">
                   {lang === 'ar' ? 'وقت الحجز' : 'Reservation Time'}
                 </span>
-                <div className="grid grid-cols-2 gap-1 p-0.5 rounded-full bg-[#FBFBFB] border border-[#1B4332]/15">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     aria-pressed={timeMode === 'now'}
@@ -529,10 +547,10 @@ export function WaitlistJoinView({
                       setTimeMode('now');
                       setTimeError(undefined);
                     }}
-                    className={`px-2.5 py-1.5 rounded-full text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    className={`px-2.5 py-2 rounded-lg border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       timeMode === 'now'
-                        ? 'bg-[#1B4332] text-white shadow-xs'
-                        : 'text-[#081C15] hover:bg-[#F2F6F3]'
+                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
+                        : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                     }`}
                   >
                     <span className="text-xs font-semibold">
@@ -543,11 +561,14 @@ export function WaitlistJoinView({
                   <button
                     type="button"
                     aria-pressed={timeMode === 'scheduled'}
-                    onClick={() => setTimeMode('scheduled')}
-                    className={`px-2.5 py-1.5 rounded-full text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                    onClick={() => {
+                      setTimeMode('scheduled');
+                      setTimeError(undefined);
+                    }}
+                    className={`px-2.5 py-2 rounded-lg border text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                       timeMode === 'scheduled'
-                        ? 'bg-[#1B4332] text-white shadow-xs'
-                        : 'text-[#081C15] hover:bg-[#F2F6F3]'
+                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
+                        : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
                     }`}
                   >
                     <Clock className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
@@ -740,7 +761,10 @@ export function WaitlistJoinView({
                         key={area.id}
                         type="button"
                         aria-pressed={active}
-                        onClick={() => setSeatingArea(area.id)}
+                        onClick={() => {
+                          setSeatingArea(area.id);
+                          setSeatingError(undefined);
+                        }}
                         className={`px-2 py-2 rounded-lg border text-center flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
                           active
                             ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
@@ -754,6 +778,11 @@ export function WaitlistJoinView({
                     );
                   })}
                 </div>
+                {seatingError && (
+                  <p role="alert" className="text-xs text-red-700 font-medium">
+                    {seatingError}
+                  </p>
+                )}
               </div>
 
               {/* Celebrations & Special Requests */}
