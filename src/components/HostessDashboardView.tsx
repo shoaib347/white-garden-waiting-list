@@ -311,7 +311,6 @@ export function HostessDashboardView({
           <h1 className="font-display text-3xl sm:text-4xl font-semibold text-[#081C15]">
             {t.hostessTitle}
           </h1>
-          <p className="text-sm text-[#081C15]/65">{t.hostessSubtitle}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
