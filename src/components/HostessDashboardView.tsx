@@ -316,13 +316,13 @@ export function HostessDashboardView({
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {staffUser?.role === 'admin' && onSelectBranch && (
             <select
               aria-label={t.selectBranchHeading}
               value={selectedBranch}
               onChange={(e) => onSelectBranch(e.target.value as BranchId | 'all')}
-              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B4332]/20 bg-white text-[#081C15] text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
+              className="h-7 px-2 py-0.5 rounded-lg border border-[#1B4332]/20 bg-white text-[#081C15] text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
             >
               <option value="all">{t.allBranches}</option>
               {branches.map((branch) => (
@@ -338,16 +338,16 @@ export function HostessDashboardView({
             type="button"
             onClick={() => onToggleBranchOpen(scopedBranchObj.id)}
             aria-pressed={scopedBranchObj.isOpen}
-            className={`min-h-[42px] px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+            className={`h-7 px-2 py-0.5 rounded-lg border text-[11px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
               scopedBranchObj.isOpen
                 ? 'bg-[#D8F3DC]/60 border-[#1B4332]/30 text-[#081C15]'
                 : 'bg-amber-50 border-amber-300 text-amber-900'
             }`}
           >
             {scopedBranchObj.isOpen ? (
-              <CheckCircle2 className="w-4 h-4 text-[#1B4332]" aria-hidden="true" />
+              <CheckCircle2 className="w-3 h-3 text-[#1B4332]" aria-hidden="true" />
             ) : (
-              <XCircle className="w-4 h-4 text-amber-700" aria-hidden="true" />
+              <XCircle className="w-3 h-3 text-amber-700" aria-hidden="true" />
             )}
             <span>
               {selectedBranch === 'all'
@@ -362,16 +362,16 @@ export function HostessDashboardView({
             type="button"
             onClick={onToggleAudio}
             aria-pressed={audioEnabled}
-            className={`min-h-[42px] px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+            className={`h-7 px-2 py-0.5 rounded-lg border text-[11px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
               audioEnabled
                 ? 'bg-white border-[#1B4332]/20 text-[#1B4332]'
                 : 'bg-neutral-100 border-neutral-300 text-neutral-600'
             }`}
           >
             {audioEnabled ? (
-              <Volume2 className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+              <Volume2 className="w-3 h-3 text-[#C5A059]" aria-hidden="true" />
             ) : (
-              <VolumeX className="w-4 h-4" aria-hidden="true" />
+              <VolumeX className="w-3 h-3" aria-hidden="true" />
             )}
             <span>{audioEnabled ? t.audioChimeOn : t.audioChimeOff}</span>
           </button>
@@ -381,10 +381,10 @@ export function HostessDashboardView({
             type="button"
             onClick={() => setQrOpen(true)}
             title={lang === 'ar' ? 'عرض وطباعة رمز QR للفرع' : 'View & print branch walk-in QR code'}
-            className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B4332]/20 bg-white hover:bg-[#F7F9F6] text-[#1B4332] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            className="h-7 px-2 py-0.5 rounded-lg border border-[#1B4332]/20 bg-white hover:bg-[#F7F9F6] text-[#1B4332] text-[11px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
           >
-            <QrCode className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
-            <span>{lang === 'ar' ? 'رمز QR للفرع' : 'Branch QR'}</span>
+            <QrCode className="w-3 h-3 text-[#C5A059]" aria-hidden="true" />
+            <span>{lang === 'ar' ? 'رمز QR' : 'Branch QR'}</span>
           </button>
 
           {/* Export CSV / Excel Download */}
@@ -392,9 +392,9 @@ export function HostessDashboardView({
             type="button"
             onClick={handleExportCSV}
             title={lang === 'ar' ? 'تصدير السجل إلى Excel / CSV' : 'Export Waitlist History to Excel / CSV'}
-            className="min-h-[42px] px-3.5 py-2 rounded-xl border border-[#1B4332]/20 bg-white hover:bg-[#F7F9F6] text-[#1B4332] text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            className="h-7 px-2 py-0.5 rounded-lg border border-[#1B4332]/20 bg-white hover:bg-[#F7F9F6] text-[#1B4332] text-[11px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
           >
-            <Download className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            <Download className="w-3 h-3 text-[#C5A059]" aria-hidden="true" />
             <span>{lang === 'ar' ? 'تصدير CSV' : 'Export CSV'}</span>
           </button>
 
@@ -402,9 +402,9 @@ export function HostessDashboardView({
           <button
             type="button"
             onClick={() => setWalkinOpen(true)}
-            className="min-h-[42px] px-4 py-2 rounded-xl bg-[#1B4332] hover:bg-[#081C15] text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+            className="h-7 px-2.5 py-0.5 rounded-lg bg-[#1B4332] hover:bg-[#081C15] text-white text-[11px] font-semibold inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
           >
-            <UserPlus className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            <UserPlus className="w-3 h-3 text-[#C5A059]" aria-hidden="true" />
             <span>{t.quickWalkinBtn}</span>
           </button>
 
@@ -413,9 +413,9 @@ export function HostessDashboardView({
               type="button"
               onClick={onLogout}
               title={staffUser ? `Signed in as ${staffUser.branchName}` : 'Sign Out'}
-              className="sm:ms-auto min-h-[42px] px-3.5 py-2 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-red-700 text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              className="sm:ms-auto h-7 px-2 py-0.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-700 text-[11px] font-medium inline-flex items-center gap-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             >
-              <LogOut className="w-4 h-4" aria-hidden="true" />
+              <LogOut className="w-3 h-3" aria-hidden="true" />
               <span>{lang === 'ar' ? 'خروج' : 'Sign Out'}</span>
             </button>
           )}
