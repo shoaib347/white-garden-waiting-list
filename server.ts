@@ -291,7 +291,9 @@ const BRANCH_LOGIN_ACCOUNTS: Record<
   roshn: { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
   'riyadh roshn': { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
   riyadhroshn: { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
-  'riyadh-roshn': { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
+  'riyadh-roshn': { branchId: 'roshn', branchName: 'Roshn Front', role: 'branch_staff' },
+  'roshn front': { branchId: 'roshn', branchName: 'Roshn Front', role: 'branch_staff' },
+  roshnfront: { branchId: 'roshn', branchName: 'Roshn Front', role: 'branch_staff' },
   // 60 Avenue
   '60 avenue': { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
   '60avenue': { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
@@ -305,7 +307,9 @@ const BRANCH_LOGIN_ACCOUNTS: Record<
   view: { branchId: 'theview', branchName: 'The View', role: 'branch_staff' },
   // Ammariayh
   ammariayh: { branchId: 'ammariayh', branchName: 'Ammariayh', role: 'branch_staff' },
-  ammariyah: { branchId: 'ammariayh', branchName: 'Ammariayh', role: 'branch_staff' },
+  ammariyah: { branchId: 'ammariayh', branchName: 'Al Ammariyah', role: 'branch_staff' },
+  'al ammariyah': { branchId: 'ammariayh', branchName: 'Al Ammariyah', role: 'branch_staff' },
+  'the farm': { branchId: 'ammariayh', branchName: 'Al Ammariyah', role: 'branch_staff' },
   // Management / All Branches
   admin: { branchId: 'all', branchName: 'All Branches', role: 'admin' },
   whitegarden: { branchId: 'all', branchName: 'All Branches', role: 'admin' },
