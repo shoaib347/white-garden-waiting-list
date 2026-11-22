@@ -153,7 +153,7 @@ export function HostessDashboardView({
         : completedList;
 
   const conciergeUpdates = branchScopedEntries
-    .filter((e) => matchesQuery(e))
+    .filter((e) => (e.status === 'waiting' || e.status === 'called') && matchesQuery(e))
     .flatMap((entry) =>
       entry.events.map((evt) => ({
         ...evt,
@@ -500,8 +500,9 @@ export function HostessDashboardView({
             return (
               <article
                 key={entry.id}
-                className="bg-white border border-[#1B4332]/15 rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-colors hover:border-[#1B4332]/30"
+                className="bg-white border border-[#1B4332]/15 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-colors hover:border-[#1B4332]/30"
               >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="font-mono text-xs sm:text-sm font-semibold text-[#1B4332] tabular-nums">
@@ -661,13 +662,48 @@ export function HostessDashboardView({
                     </span>
                   )}
                 </div>
+                </div>
+
+                {/* Per-Guest Concierge Activity Log shown ONLY inside Completed / Seated History rows */}
+                {activeTab === 'completed' && entry.events.length > 0 && (
+                  <div className="pt-3 border-t border-[#1B4332]/10">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#2D6A4F] mb-2">
+                      {t.ticketTimelineTitle}
+                    </p>
+                    <ul className="space-y-1.5">
+                      {entry.events.map((evt) => {
+                        const isExtraTime = evt.messageEn.toLowerCase().includes('additional minutes');
+                        return (
+                          <li
+                            key={evt.id}
+                            className="flex items-center justify-between gap-3 text-xs"
+                          >
+                            <span
+                              className={
+                                isExtraTime
+                                  ? 'text-amber-800 font-medium'
+                                  : 'text-[#081C15]/75'
+                              }
+                            >
+                              {lang === 'ar' ? evt.messageAr : evt.messageEn}
+                            </span>
+                            <span className="font-mono text-[11px] text-[#081C15]/50 tabular-nums shrink-0">
+                              {formatClockTime(evt.timestamp)}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </article>
             );
           })}
         </div>
       )}
 
-      {/* Live Concierge Updates (with Customer Name & Mobile Number) */}
+      {/* Live Concierge Updates (active waiting & calling guests only) */}
+      {activeTab !== 'completed' && (
       <section className="bg-white border border-[#1B4332]/15 rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-2xl font-semibold text-[#081C15]">
@@ -731,6 +767,7 @@ export function HostessDashboardView({
           </ul>
         )}
       </section>
+      )}
 
       {/* Quick Walk-in Modal */}
       {walkinOpen && (
