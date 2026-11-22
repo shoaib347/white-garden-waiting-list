@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import {
+  ArrowLeft,
+  ArrowRight,
   Calendar,
   CheckCircle2,
   Clock,
@@ -98,6 +100,16 @@ export function WaitlistJoinView({
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [step, setStep] = useState<'branch' | 'form'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const b = (params.get('branch') || '').trim().toLowerCase();
+      if (['olaya', 'roshn', 'sixty', 'theview', 'ammariayh'].includes(b)) {
+        return 'form';
+      }
+    }
+    return 'branch';
+  });
   const [branchImgFailed, setBranchImgFailed] = useState<Record<string, boolean>>({});
 
   const activeBranch = branches.find((b) => b.id === selectedBranchId) ?? branches[1];
@@ -149,11 +161,10 @@ export function WaitlistJoinView({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      {/* Main 2-Column Interactive Waitlist Workspace */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: 5 Branches Selector */}
-        <div className="lg:col-span-6 space-y-5">
+    <div className="max-w-xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      {/* Step 1: Select Destination & Confirm */}
+      {step === 'branch' && (
+        <section className="space-y-5">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-1">
               <h1 className="font-display text-2xl sm:text-3xl font-semibold text-[#081C15]">
@@ -258,10 +269,58 @@ export function WaitlistJoinView({
               );
             })}
           </div>
-        </div>
 
-        {/* Right Column: Guest Waitlist Form */}
-        <div className="lg:col-span-6">
+          {!activeBranch.isOpen && (
+            <div
+              role="alert"
+              className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm"
+            >
+              {t.waitlistClosedNotice}
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={!activeBranch.isOpen}
+            onClick={() => {
+              setStep('form');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="w-full min-h-[50px] px-6 py-3.5 rounded-xl bg-[#1B4332] hover:bg-[#081C15] disabled:bg-neutral-300 disabled:text-neutral-600 text-white text-sm sm:text-base font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+          >
+            <span>
+              {lang === 'ar'
+                ? `تأكيد فرع ${activeBranch.nameAr} والمتابعة`
+                : `Confirm ${activeBranch.nameEn} & Continue`}
+            </span>
+            {lang === 'ar' ? (
+              <ArrowLeft className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            ) : (
+              <ArrowRight className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            )}
+          </button>
+        </section>
+      )}
+
+      {/* Step 2: Guest Waitlist Form (shown after confirming location) */}
+      {step === 'form' && (
+        <section className="space-y-4">
+          <button
+            type="button"
+            onClick={() => {
+              setStep('branch');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#1B4332] hover:text-[#081C15] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] rounded-md px-1 py-0.5"
+          >
+            {lang === 'ar' ? (
+              <ArrowRight className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            ) : (
+              <ArrowLeft className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
+            )}
+            <span>{lang === 'ar' ? 'تغيير الفرع' : 'Change Branch'}</span>
+          </button>
+
           <div className="bg-white/90 backdrop-blur-md border border-[#1B4332]/15 rounded-2xl p-6 sm:p-8 shadow-sm">
             <div className="pb-5 mb-6 border-b border-[#1B4332]/10 flex items-start justify-between gap-4">
               <div className="space-y-1">
@@ -568,8 +627,8 @@ export function WaitlistJoinView({
               </button>
             </form>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
