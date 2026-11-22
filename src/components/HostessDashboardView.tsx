@@ -293,7 +293,7 @@ export function HostessDashboardView({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
       {/* Top Operational Toolbar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[#1B4332]/10">
+      <div className="flex flex-col gap-4 pb-5 border-b border-[#1B4332]/10">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2 text-xs text-[#2D6A4F] font-medium">
             <span>
@@ -400,7 +400,7 @@ export function HostessDashboardView({
               type="button"
               onClick={onLogout}
               title={staffUser ? `Signed in as ${staffUser.branchName}` : 'Sign Out'}
-              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-red-700 text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              className="sm:ms-auto min-h-[42px] px-3.5 py-2 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-red-700 text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             >
               <LogOut className="w-4 h-4" aria-hidden="true" />
               <span>{lang === 'ar' ? 'خروج' : 'Sign Out'}</span>
