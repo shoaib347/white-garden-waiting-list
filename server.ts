@@ -279,19 +279,76 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Branch-specific staff login mapping (case-insensitive)
+const BRANCH_LOGIN_ACCOUNTS: Record<
+  string,
+  { branchId: string; branchName: string; role: 'branch_staff' | 'admin' }
+> = {
+  // Olaya
+  olaya: { branchId: 'olaya', branchName: 'Olaya', role: 'branch_staff' },
+  'al olaya': { branchId: 'olaya', branchName: 'Olaya', role: 'branch_staff' },
+  // Riyadh Roshn
+  roshn: { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
+  'riyadh roshn': { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
+  riyadhroshn: { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
+  'riyadh-roshn': { branchId: 'roshn', branchName: 'Riyadh Roshn', role: 'branch_staff' },
+  // 60 Avenue
+  '60 avenue': { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
+  '60avenue': { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
+  '60-avenue': { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
+  sixty: { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
+  '60ave': { branchId: 'sixty', branchName: '60 Avenue', role: 'branch_staff' },
+  // The View
+  'the view': { branchId: 'theview', branchName: 'The View', role: 'branch_staff' },
+  theview: { branchId: 'theview', branchName: 'The View', role: 'branch_staff' },
+  'the-view': { branchId: 'theview', branchName: 'The View', role: 'branch_staff' },
+  view: { branchId: 'theview', branchName: 'The View', role: 'branch_staff' },
+  // Ammariayh
+  ammariayh: { branchId: 'ammariayh', branchName: 'Ammariayh', role: 'branch_staff' },
+  ammariyah: { branchId: 'ammariayh', branchName: 'Ammariayh', role: 'branch_staff' },
+  // Management / All Branches
+  admin: { branchId: 'all', branchName: 'All Branches', role: 'admin' },
+  whitegarden: { branchId: 'all', branchName: 'All Branches', role: 'admin' },
+};
+
 // Staff authentication
 app.post('/api/v1/auth/login', (req, res) => {
-  const { username, password } = req.body;
-  const validPass = process.env.STAFF_PASSWORD || 'whitegarden123';
+  const rawUsername = typeof req.body?.username === 'string' ? req.body.username : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  const normalizedUsername = rawUsername.trim().toLowerCase().replace(/\s+/g, ' ');
+  const validPass = process.env.STAFF_PASSWORD || 'Mateen@123';
 
-  if (
-    (username === 'whitegarden' || username === 'staff' || username === 'admin') &&
-    (password === validPass || password === 'admin123')
-  ) {
-    const token = jwt.sign({ role: 'staff', username }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ success: true, token });
+  const account = BRANCH_LOGIN_ACCOUNTS[normalizedUsername];
+
+  if (account && password === validPass) {
+    const payload = {
+      role: account.role,
+      username: normalizedUsername,
+      branchId: account.branchId,
+      branchName: account.branchName,
+    };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ success: true, token, user: payload });
   } else {
-    res.status(401).json({ success: false, error: 'Invalid White Garden staff credentials' });
+    res.status(401).json({
+      success: false,
+      error: 'Invalid branch login ID or password',
+    });
+  }
+});
+
+// Verify staff session token
+app.get('/api/v1/auth/verify', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!token) {
+    return res.status(401).json({ valid: false });
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return res.json({ valid: true, user: decoded });
+  } catch {
+    return res.status(401).json({ valid: false });
   }
 });
 

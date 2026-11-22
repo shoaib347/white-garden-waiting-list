@@ -3,6 +3,7 @@ import {
   BellRing,
   CheckCircle2,
   Clock,
+  LogOut,
   Minus,
   Plus,
   Search,
@@ -29,6 +30,7 @@ import {
   type TicketAction,
   type WaitlistEntry,
 } from '../utils/waitlistLogic';
+import type { StaffAuthSession } from './StaffLoginView';
 
 interface HostessDashboardViewProps {
   lang: Language;
@@ -46,6 +48,8 @@ interface HostessDashboardViewProps {
     partySize: number;
     seatingArea: SeatingAreaId;
   }) => void;
+  staffUser?: StaffAuthSession | null;
+  onLogout?: () => void;
 }
 
 type QueueTab = 'waiting' | 'calling' | 'completed';
@@ -60,6 +64,8 @@ export function HostessDashboardView({
   entries,
   onTicketAction,
   onAddWalkin,
+  staffUser,
+  onLogout,
 }: HostessDashboardViewProps) {
   const t = COPY[lang];
   const [activeTab, setActiveTab] = useState<QueueTab>('waiting');
@@ -251,6 +257,18 @@ export function HostessDashboardView({
             <UserPlus className="w-4 h-4 text-[#C5A059]" aria-hidden="true" />
             <span>{t.quickWalkinBtn}</span>
           </button>
+
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              title={staffUser ? `Signed in as ${staffUser.branchName}` : 'Sign Out'}
+              className="min-h-[42px] px-3.5 py-2 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-red-700 text-xs sm:text-sm font-medium inline-flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            >
+              <LogOut className="w-4 h-4" aria-hidden="true" />
+              <span>{lang === 'ar' ? 'خروج' : 'Sign Out'}</span>
+            </button>
+          )}
         </div>
       </div>
 

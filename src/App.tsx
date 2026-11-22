@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { HostessDashboardView } from './components/HostessDashboardView';
+import { StaffLoginView, type StaffAuthSession } from './components/StaffLoginView';
 import { LocationsMapView } from './components/LocationsMapView';
 import { TicketTrackerView } from './components/TicketTrackerView';
 import { WaitlistJoinView } from './components/WaitlistJoinView';
@@ -140,6 +141,70 @@ export default function App() {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [sequenceCounter, setSequenceCounter] = useState(108);
   const [toast, setToast] = useState<ToastNotification | null>(null);
+  const [staffAuth, setStaffAuth] = useState<StaffAuthSession | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = window.localStorage.getItem('wg_staff_auth');
+      return saved ? (JSON.parse(saved) as StaffAuthSession) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Verify saved staff token on mount
+  useEffect(() => {
+    if (!staffAuth?.token) return;
+    fetch('/api/v1/auth/verify', {
+      headers: { Authorization: `Bearer ${staffAuth.token}` },
+    })
+      .then((res) => {
+        if (res.status === 401) {
+          setStaffAuth(null);
+          window.localStorage.removeItem('wg_staff_auth');
+        }
+      })
+      .catch(() => {
+        // Keep session in offline mode
+      });
+  }, []);
+
+  // Lock branch selection when branch staff is viewing Hostess Desk
+  useEffect(() => {
+    if (activeView === 'hostess' && staffAuth && staffAuth.branchId !== 'all') {
+      setSelectedBranch(staffAuth.branchId);
+    }
+  }, [activeView, staffAuth]);
+
+  const handleStaffLogin = (session: StaffAuthSession) => {
+    setStaffAuth(session);
+    try {
+      window.localStorage.setItem('wg_staff_auth', JSON.stringify(session));
+    } catch {
+      // Ignore storage quota issues
+    }
+    if (session.branchId !== 'all') {
+      setSelectedBranch(session.branchId);
+    }
+    showToast(
+      lang === 'ar'
+        ? `تم تسجيل الدخول بنجاح — فرع ${session.branchName}`
+        : `Signed in to ${session.branchName} Hostess Desk`,
+      'info',
+    );
+  };
+
+  const handleStaffLogout = () => {
+    setStaffAuth(null);
+    try {
+      window.localStorage.removeItem('wg_staff_auth');
+    } catch {
+      // Ignore
+    }
+    showToast(
+      lang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Signed out of Hostess Desk',
+      'info',
+    );
+  };
 
   const { socket, isConnected } = useSocket();
   const t = COPY[lang];
@@ -606,6 +671,7 @@ export default function App() {
         branches={branches}
         selectedBranch={selectedBranch}
         onSelectBranch={(id) => setSelectedBranch(id)}
+        lockedBranchId={activeView === 'hostess' && staffAuth && staffAuth.branchId !== 'all' ? staffAuth.branchId : null}
       />
 
       <main className="flex-1">
@@ -647,17 +713,23 @@ export default function App() {
         )}
 
         {activeView === 'hostess' && (
-          <HostessDashboardView
-            lang={lang}
-            branches={branches}
-            selectedBranch={selectedBranch}
-            onToggleBranchOpen={handleToggleBranchOpen}
-            audioEnabled={audioEnabled}
-            onToggleAudio={() => setAudioEnabled((prev) => !prev)}
-            entries={entries}
-            onTicketAction={handleTicketAction}
-            onAddWalkin={handleAddWalkin}
-          />
+          staffAuth ? (
+            <HostessDashboardView
+              lang={lang}
+              branches={branches}
+              selectedBranch={staffAuth.branchId !== 'all' ? staffAuth.branchId : selectedBranch}
+              onToggleBranchOpen={handleToggleBranchOpen}
+              audioEnabled={audioEnabled}
+              onToggleAudio={() => setAudioEnabled((prev) => !prev)}
+              entries={entries}
+              onTicketAction={handleTicketAction}
+              onAddWalkin={handleAddWalkin}
+              staffUser={staffAuth}
+              onLogout={handleStaffLogout}
+            />
+          ) : (
+            <StaffLoginView lang={lang} onLoginSuccess={handleStaffLogin} />
+          )
         )}
       </main>
 
