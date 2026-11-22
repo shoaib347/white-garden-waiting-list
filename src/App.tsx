@@ -19,6 +19,7 @@ import {
 } from './data/whiteGardenData';
 import { playHospitalityChime } from './utils/soundChime';
 import {
+  extractReservationTimeTag,
   generateTicketCode,
   normalizeTicketSlug,
   transitionTicket,
@@ -90,7 +91,8 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
   const rawNotes: string = r.notes || '';
   const graceMatches = rawNotes.match(/\[\+5m\]/g);
   const extraGraceMinutes = graceMatches ? graceMatches.length * 5 : 0;
-  const cleanNotes = rawNotes
+  const { reservationTime, cleanNotes: notesNoTime } = extractReservationTimeTag(rawNotes);
+  const cleanNotes = notesNoTime
     .replace(/\[\+5m\]/g, '')
     .replace(/\[WALKIN\]/g, '')
     .replace(/\s*\|?\s*Table\s+G-\d+/gi, '')
@@ -118,6 +120,7 @@ function mapBackendReservationToEntry(r: any): WaitlistEntry {
     calledAt: calledMs,
     seatedAt: seatedMs,
     extraGraceMinutes: extraGraceMinutes || undefined,
+    reservationTime,
     visitCount: typeof r.visit_count === 'number' ? r.visit_count : undefined,
     holdExpiresAt: calledMs ? calledMs + (10 + extraGraceMinutes) * 60 * 1000 : undefined,
     events: (() => {
@@ -545,6 +548,7 @@ export default function App() {
     seatingArea: SeatingAreaId;
     specialRequests: SpecialRequestId[];
     notes: string;
+    reservationTime?: string;
   }) => {
     const branch = branches.find((b) => b.id === input.branchId) ?? branches[1];
     const nextSeq = sequenceCounter;
@@ -565,6 +569,7 @@ export default function App() {
       seatingArea: input.seatingArea,
       specialRequests: input.specialRequests,
       notes: input.notes || undefined,
+      reservationTime: input.reservationTime,
       status: 'waiting',
       source: 'guest',
       createdAt: now,
@@ -600,7 +605,7 @@ export default function App() {
           mobile: input.phone,
           party_size: input.partySize,
           area_name: input.seatingArea,
-          notes: input.notes + (input.specialRequests.length ? ` | Requests: ${input.specialRequests.join(', ')}` : ''),
+          notes: [input.reservationTime ? `[TIME:${input.reservationTime}]` : '', input.notes, input.specialRequests.length ? `Requests: ${input.specialRequests.join(', ')}` : ''].filter(Boolean).join(' | '),
           branch_id: input.branchId,
         }),
       });

@@ -27,6 +27,7 @@ import {
 import {
   computeDashboardStats,
   formatDurationCompact,
+  formatReservationTime,
   type BranchId,
   type BranchInfo,
   type SeatingAreaId,
@@ -222,6 +223,7 @@ export function HostessDashboardView({
       'Mobile',
       'Party Size',
       'Seating Area',
+      'Reservation Time',
       'Source',
       'Status',
       'Table',
@@ -244,6 +246,7 @@ export function HostessDashboardView({
         csvEscape(entry.phone),
         entry.partySize,
         csvEscape(areaName(entry.seatingArea)),
+        csvEscape(entry.reservationTime ? formatReservationTime(entry.reservationTime, 'en') : 'Now'),
         csvEscape(entry.source === 'walkin' ? 'Walk-in' : 'Online'),
         csvEscape(entry.status),
         csvEscape(entry.tableNumber || ''),
@@ -565,6 +568,12 @@ export function HostessDashboardView({
                       {entry.source === 'walkin' && (
                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
                           {lang === 'ar' ? 'حضور مباشر' : 'Walk-in'}
+                        </span>
+                      )}
+                      {entry.reservationTime && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#F2F5F0] text-[#1B4332] border border-[#1B4332]/25">
+                          <Clock className="w-3 h-3 text-[#C5A059]" aria-hidden="true" />
+                          {formatReservationTime(entry.reservationTime, lang)}
                         </span>
                       )}
                       {(entry.extraGraceMinutes ?? 0) > 0 && (

@@ -20,6 +20,7 @@ import {
 import {
   estimateWaitMinutes,
   formatDurationCompact,
+  formatReservationTime,
   getQueuePosition,
   type BranchInfo,
   type TicketAction,
@@ -304,6 +305,19 @@ export function TicketTrackerView({
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-[#081C15]/60">{t.seatingAreaLabel}</span>
                   <span className="font-medium text-[#081C15] text-end">{areaLabel}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[#081C15]/60">
+                    {lang === 'ar' ? 'وقت الحجز' : 'Reservation Time'}
+                  </span>
+                  <span className="font-semibold text-[#1B4332] inline-flex items-center gap-1.5 text-end">
+                    <Clock className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
+                    {ticket.reservationTime
+                      ? formatReservationTime(ticket.reservationTime, lang)
+                      : lang === 'ar'
+                        ? 'الآن (دخول فوري)'
+                        : 'Now (Immediate)'}
+                  </span>
                 </div>
                 {requestLabels.length > 0 && (
                   <div className="flex items-center justify-between gap-4">

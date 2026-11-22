@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Clock, MapPin, Phone, Users, X } from 'lucide-react';
 import { SEATING_AREAS, type Language } from '../data/whiteGardenData';
-import type { BranchInfo, WaitlistEntry } from '../utils/waitlistLogic';
+import { extractReservationTimeTag, formatReservationTime, type BranchInfo, type WaitlistEntry } from '../utils/waitlistLogic';
 
 interface GuestHistoryVisit {
   reservation_id: string;
@@ -256,7 +256,8 @@ export function GuestHistoryModal({
               const dt = new Date(visit.created_at);
               const rawNotes = visit.notes || '';
               const graceCount = (rawNotes.match(/\[\+5m\]/g) || []).length * 5;
-              const cleanNote = rawNotes
+              const { reservationTime: visitResTime, cleanNotes: notesNoTime } = extractReservationTimeTag(rawNotes);
+              const cleanNote = notesNoTime
                 .replace(/\[\+5m\]/g, '')
                 .replace(/\[WALKIN\]/g, '')
                 .replace(/\s*\|?\s*Table\s+G-\d+/gi, '')
@@ -310,8 +311,13 @@ export function GuestHistoryModal({
                     <span>· {areaLabel(visit.area_name)}</span>
                   </div>
 
-                  {(graceCount > 0 || cleanNote) && (
+                  {(visitResTime || graceCount > 0 || cleanNote) && (
                     <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {visitResTime && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#F2F5F0] text-[#1B4332] border border-[#1B4332]/20">
+                          {formatReservationTime(visitResTime, lang)}
+                        </span>
+                      )}
                       {graceCount > 0 && (
                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
                           {isAr ? `+${graceCount} دقائق إضافية` : `+${graceCount} min requested`}

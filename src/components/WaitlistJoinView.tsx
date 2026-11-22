@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import {
+  Calendar,
   CheckCircle2,
   Clock,
   MapPin,
@@ -39,6 +40,7 @@ interface WaitlistJoinViewProps {
     seatingArea: SeatingAreaId;
     specialRequests: SpecialRequestId[];
     notes: string;
+    reservationTime?: string;
   }) => void;
   onOpenMap?: () => void;
 }
@@ -56,6 +58,41 @@ export function WaitlistJoinView({
   const [guestName, setGuestName] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
   const [partySize, setPartySize] = useState(2);
+  const getTodayYmd = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const getDefaultSlot = () => {
+    const d = new Date();
+    const nextMin = d.getMinutes() < 30 ? 30 : 0;
+    const nextHour = d.getMinutes() < 30 ? d.getHours() : (d.getHours() + 1) % 24;
+    return `${String(nextHour).padStart(2, '0')}:${String(nextMin).padStart(2, '0')}`;
+  };
+  const [timeMode, setTimeMode] = useState<'now' | 'scheduled'>('now');
+  const [reservationDate, setReservationDate] = useState<string>(() => getTodayYmd());
+  const [reservationSlot, setReservationSlot] = useState<string>(() => getDefaultSlot());
+
+  // 30-minute time slots covering all White Garden branch operating hours (08:00 AM – 01:30 AM)
+  const timeSlots: { value: string; labelEn: string; labelAr: string }[] = (() => {
+    const slots: { value: string; labelEn: string; labelAr: string }[] = [];
+    const hoursOrder = [
+      8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1,
+    ];
+    for (const h of hoursOrder) {
+      for (const m of [0, 30]) {
+        const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const isPm = h >= 12;
+        const h12 = h % 12 === 0 ? 12 : h % 12;
+        const mStr = String(m).padStart(2, '0');
+        slots.push({
+          value: val,
+          labelEn: `${h12}:${mStr} ${isPm ? 'PM' : 'AM'}`,
+          labelAr: `${h12}:${mStr} ${isPm ? 'م' : 'ص'}`,
+        });
+      }
+    }
+    return slots;
+  })();
   const [seatingArea, setSeatingArea] = useState<SeatingAreaId>('terrace');
   const [specialRequests, setSpecialRequests] = useState<SpecialRequestId[]>([]);
   const [notes, setNotes] = useState('');
@@ -105,6 +142,7 @@ export function WaitlistJoinView({
         seatingArea,
         specialRequests,
         notes: notes.trim(),
+        reservationTime: timeMode === 'scheduled' ? `${reservationDate} ${reservationSlot}` : undefined,
       });
       setIsSubmitting(false);
     }, 420);
@@ -354,6 +392,83 @@ export function WaitlistJoinView({
                     <Plus className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
+              </div>
+
+              {/* Reservation Time Selector */}
+              <div className="space-y-2">
+                <span className="block text-sm font-medium text-[#081C15]">
+                  {lang === 'ar' ? 'وقت الحجز' : 'Reservation Time'}
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    aria-pressed={timeMode === 'now'}
+                    onClick={() => setTimeMode('now')}
+                    className={`px-3.5 py-2.5 rounded-xl border text-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                      timeMode === 'now'
+                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
+                        : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
+                    }`}
+                  >
+                    <span className="text-xs sm:text-sm font-semibold">
+                      {lang === 'ar' ? 'الآن (دخول فوري)' : 'Now (Join Queue)'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={timeMode === 'scheduled'}
+                    onClick={() => setTimeMode('scheduled')}
+                    className={`px-3.5 py-2.5 rounded-xl border text-center transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] ${
+                      timeMode === 'scheduled'
+                        ? 'bg-[#1B4332] text-white border-[#1B4332] shadow-xs'
+                        : 'bg-[#FBFBFB] text-[#081C15] border-[#1B4332]/15 hover:border-[#1B4332]/40'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5 text-[#C5A059]" aria-hidden="true" />
+                    <span className="text-xs sm:text-sm font-semibold">
+                      {lang === 'ar' ? 'تحديد الوقت' : 'Select Time'}
+                    </span>
+                  </button>
+                </div>
+
+                {timeMode === 'scheduled' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <div className="relative">
+                      <Calendar
+                        className="w-4 h-4 text-[#C5A059] absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <input
+                        type="date"
+                        aria-label={lang === 'ar' ? 'تاريخ الحجز' : 'Reservation Date'}
+                        min={getTodayYmd()}
+                        value={reservationDate}
+                        onChange={(e) => setReservationDate(e.target.value)}
+                        dir="ltr"
+                        className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#FBFBFB] border border-[#1B4332]/20 text-xs sm:text-sm text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059]"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Clock
+                        className="w-4 h-4 text-[#C5A059] absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <select
+                        aria-label={lang === 'ar' ? 'وقت الحجز' : 'Reservation Time Slot'}
+                        value={reservationSlot}
+                        onChange={(e) => setReservationSlot(e.target.value)}
+                        className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#FBFBFB] border border-[#1B4332]/20 text-xs sm:text-sm text-[#081C15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] cursor-pointer"
+                      >
+                        {timeSlots.map((slot) => (
+                          <option key={slot.value} value={slot.value}>
+                            {lang === 'ar' ? slot.labelAr : slot.labelEn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Seating Area */}

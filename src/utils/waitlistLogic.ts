@@ -79,6 +79,7 @@ export interface WaitlistEntry {
   extraGraceMinutes?: number;
   hostessNotifiedAt?: number;
   visitCount?: number;
+  reservationTime?: string;
   events: TicketEvent[];
 }
 
@@ -405,4 +406,56 @@ export function formatDurationCompact(ms: number, lang: 'en' | 'ar'): string {
 
 export function normalizeTicketSlug(codeOrId: string): string {
   return codeOrId.replace(/^#/, '').trim().toUpperCase();
+}
+
+
+export function extractReservationTimeTag(notes?: string | null): {
+  reservationTime?: string;
+  cleanNotes: string;
+} {
+  const raw = notes || '';
+  const match = raw.match(/\[TIME:([^\]]+)\]/);
+  const reservationTime = match ? match[1].trim() : undefined;
+  const cleanNotes = raw.replace(/\s*\[TIME:[^\]]+\]\s*/g, ' ').trim();
+  return { reservationTime, cleanNotes };
+}
+
+export function formatReservationTime(raw: string, lang: 'en' | 'ar'): string {
+  const parts = raw.trim().split(' ');
+  if (parts.length < 2) return raw;
+  const [datePart, timePart] = parts;
+  const [hStr, mStr] = timePart.split(':');
+  const hour24 = parseInt(hStr, 10);
+  const mins = parseInt(mStr, 10) || 0;
+  if (Number.isNaN(hour24)) return raw;
+
+  const isPm = hour24 >= 12;
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  const paddedMin = String(mins).padStart(2, '0');
+  const timeLabel =
+    lang === 'ar'
+      ? `${hour12}:${paddedMin} ${isPm ? 'م' : 'ص'}`
+      : `${hour12}:${paddedMin} ${isPm ? 'PM' : 'AM'}`;
+
+  const today = new Date();
+  const toYmd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  if (datePart === toYmd(today)) {
+    return lang === 'ar' ? `اليوم · ${timeLabel}` : `Today · ${timeLabel}`;
+  }
+  if (datePart === toYmd(tomorrow)) {
+    return lang === 'ar' ? `غداً · ${timeLabel}` : `Tomorrow · ${timeLabel}`;
+  }
+  const parsedDate = new Date(`${datePart}T12:00:00`);
+  if (!Number.isNaN(parsedDate.getTime())) {
+    const dateLabel = parsedDate.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+    return `${dateLabel} · ${timeLabel}`;
+  }
+  return `${datePart} · ${timeLabel}`;
 }
